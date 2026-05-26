@@ -21,13 +21,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 🚀 Configuration de EAS CLI
+      # AJOUT CONTOURNEMENT : On installe EAS CLI globalement avec npm avant l'action Expo
+      - name: 🛠 Installation manuelle de EAS CLI
+        run: npm install -g eas-cli
+
+      - name: 🚀 Configuration de l'environnement Expo
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: 📦 Dépendances
+      - name: 📦 Dépendances du projet
         run: npm install
 
       - name: 🛠 Compilation de l'APK (Preview)
