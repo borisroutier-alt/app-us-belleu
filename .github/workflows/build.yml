@@ -1,7 +1,7 @@
 name: Build APK Club
 on:
   push:
-    branches: [ main ] # Déclenche le build dès que tu pousses ton code sur la branche principale
+    branches: [ main ]
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }} # Ton jeton Expo pour lier ton compte
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: 📦 Dépendances
         run: npm install
