@@ -1,7 +1,6 @@
-name: Build APK Production (Sans Expo Cloud)
+name: Build APK Dev (Sans Expo Cloud)
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,16 +23,16 @@ jobs:
       - name: 📦 Installation des dépendances
         run: npm install
 
-      - name: 🤖 Génération des fichiers natifs Android (Prebuild)
-        run: npx expo prebuild --platform android
+      - name: 🤖 Génération des fichiers natifs Android en mode Dev
+        run: npx expo prebuild --platform android --template expo-template-bare-minimum
 
-      - name: 🏗 Compilation de l'APK avec Gradle
+      - name: 🏗 Compilation de l'APK de Debug (Dev)
         run: |
           cd android
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
 
-      - name: 📦 Sauvegarder l'APK sur GitHub
+      - name: 📦 Sauvegarder l'APK de DEV sur GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: app-club-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: app-club-dev-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
