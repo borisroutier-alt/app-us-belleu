@@ -2,7 +2,7 @@
   "expo": {
     "name": "usbelleu-app",
     "slug": "usbelleu-app",
-    "owner": "borisroutier-alt",
+    "owner": "usbelleu",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
