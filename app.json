@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "usbelleu-app",
+    "slug": "usbelleu-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "usbelleuapp",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "icon": "./assets/expo.icon"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.usbelleu.usbelleuapp",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#14294E",
+          "android": {
+            "image": "./assets/images/splash.png",
+            "imageWidth": 76
+          }
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8ffb7218-c17e-41f5-a838-843a7aa4c4a1"
+      }
+    }
+  }
+}
