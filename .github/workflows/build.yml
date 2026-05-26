@@ -10,20 +10,16 @@ jobs:
       - name: 🏗 Checkout du projet
         uses: actions/checkout@v3
 
-      - name: 🟢 Configuration de Node.js
+      - name: 🟢 Configuration de Node.js (Version requise par EAS)
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20 # <-- On passe en version 20 pour valider les prérequis d'EAS
 
       - name: ☕ Configuration de Java JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
-
-      # AJOUT CONTOURNEMENT : On installe EAS CLI globalement avec npm avant l'action Expo
-      - name: 🛠 Installation manuelle de EAS CLI
-        run: npm install -g eas-cli
 
       - name: 🚀 Configuration de l'environnement Expo
         uses: expo/expo-github-action@v8
