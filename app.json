@@ -2,13 +2,14 @@
   "expo": {
     "name": "usbelleu-app",
     "slug": "usbelleu-app",
+    "owner": "borisroutier-alt",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "usbelleuapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/icon.png"
     },
     "android": {
       "adaptiveIcon": {
