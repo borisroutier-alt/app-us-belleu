@@ -15,7 +15,6 @@ import { supabase } from '../supabaseClient';
 
 // Importations
 import AuthForm from '../components/AuthForm';
-import MatchCard, { Match } from '../components/MatchCard';
 import NewsCard, { Article } from '../components/NewsCard';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { selectionnerEtEnvoyerPhoto } from '../services/photoService';
@@ -32,10 +31,7 @@ const Index: React.FC = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
   const [isPhotoUploading, setIsPhotoUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'actus' | 'matchs'>('actus');
-  const [responses, setResponses] = useState<Record<string, 'present' | 'absent'>>({});
   const [news, setNews] = useState<Article[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
 
   usePushNotifications(isLoggedIn);
 
@@ -70,9 +66,6 @@ const Index: React.FC = () => {
       if (newsError) throw newsError;
       setNews(newsData || []);
 
-      const { data: matchesData, error: matchesError } = await supabase.from('matches').select('*').order('date', { ascending: true });
-      if (matchesError) throw matchesError;
-      setMatches(matchesData || []);
     } catch (error: any) {
       alert("Erreur de chargement Cloud : " + error.message);
     } finally {
@@ -89,15 +82,9 @@ const Index: React.FC = () => {
       await supabase.auth.signOut();
       setIsLoggedIn(false);
       setIsAdmin(false);
-      setActiveTab('actus');
-      setResponses({});
     } catch (error: any) {
       alert("Erreur lors de la déconnexion : " + error.message);
     }
-  };
-
-  const handleSelectStatus = (matchId: string, status: 'present' | 'absent') => {
-    setResponses(prev => ({ ...prev, [matchId]: status }));
   };
 
   const handleSharePhoto = async () => {
@@ -107,7 +94,7 @@ const Index: React.FC = () => {
       
       setIsPhotoUploading(true);
       const publicUrl = await selectionnerEtEnvoyerPhoto(user.id);
-      if (publicUrl && activeTab === 'actus') fetchDataFromCloud();
+      if (publicUrl) fetchDataFromCloud();
     } catch (error: any) {
       console.error(error);
     } finally {
@@ -135,7 +122,7 @@ const Index: React.FC = () => {
     <SafeAreaView style={styles.homeContainer} edges={['top']}>
       <StatusBar barStyle="light-content" />
       
-      {/* BARRE D'EN-TÊTE CHIC */}
+      {/* BARRE D'EN-TÊTE */}
       <View style={styles.headerBar}>
         <Image source={LogoClub} style={styles.headerLogo} resizeMode="contain" />
         <View style={styles.headerTitleContainer}>
@@ -143,7 +130,7 @@ const Index: React.FC = () => {
           <Text style={styles.headerSubtitle}>ESPACE MEMBRE</Text>
         </View>
         
-        {/* Bouton Appareil Photo intégré discrètement dans le header */}
+        {/* Bouton Appareil Photo */}
         <TouchableOpacity 
           style={[styles.headerIconAction, isPhotoUploading && { backgroundColor: 'transparent' }]} 
           onPress={handleSharePhoto}
@@ -161,24 +148,14 @@ const Index: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* SOUS-ONGLETS PRINCIPAUX (ACTUS / MATCHS) */}
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity style={[styles.tabButton, activeTab === 'actus' && styles.activeTabButton]} onPress={() => setActiveTab('actus')}>
-          <Text style={[styles.tabButtonText, activeTab === 'actus' && styles.activeTabButtonText]}>📢 ACTUALITÉS</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.tabButton, activeTab === 'matchs' && styles.activeTabButton]} onPress={() => setActiveTab('matchs')}>
-          <Text style={[styles.tabButtonText, activeTab === 'matchs' && styles.activeTabButtonText]}>📅 MATCHS</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* CORPS PRINCIPAL DÉGAGÉ ET PROPRE */}
+      {/* SECTION DU FIL D'ACTUALITÉS DIRECT (SANS LES SOUS-ONGLETS) */}
       <View style={{ flex: 1, backgroundColor: '#061329' }}>
         {isFetching ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="large" color="#C5A059" />
             <Text style={{ color: '#FFFFFF', marginTop: 10 }}>Connexion au Cloud...</Text>
           </View>
-        ) : activeTab === 'actus' ? (
+        ) : (
           <FlatList 
             data={news} 
             keyExtractor={(item) => item.id} 
@@ -186,24 +163,20 @@ const Index: React.FC = () => {
             contentContainerStyle={styles.scrollList} 
             showsVerticalScrollIndicator={false} 
           />
-        ) : (
-          <FlatList 
-            data={matches} 
-            keyExtractor={(item) => item.id} 
-            renderItem={({ item }) => (
-              <MatchCard item={item} userChoice={responses[item.id]} onSelectStatus={handleSelectStatus} />
-            )} 
-            contentContainerStyle={styles.scrollList} 
-            showsVerticalScrollIndicator={false} 
-          />
         )}
       </View>
 
       {/* BARRE DE NAVIGATION MODERNE TOUT EN BAS */}
-      <View style={styles.bottomTabBar}>
+      <View style={styles.bottomTabBar} key={isAdmin ? 'bar-admin' : 'bar-user'}>
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/classement')}>
           <Text style={styles.tabBarIcon}>🏆</Text>
           <Text style={styles.tabBarLabel}>Classement</Text>
+        </TouchableOpacity>
+
+        {/* @ts-ignore */}
+        <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/calendrier')}>
+          <Text style={styles.tabBarIcon}>📆</Text>
+          <Text style={styles.tabBarLabel}>Calendrier</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/galerie')}>
@@ -239,14 +212,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#14294E' },
   homeContainer: { flex: 1, backgroundColor: '#0F2241' },
   headerBar: { 
-  flexDirection: 'row', 
-  alignItems: 'center', 
-  backgroundColor: '#0F2241', 
-  paddingVertical: 15, 
-  paddingHorizontal: 20, 
-  borderBottomWidth: 1, 
-  borderColor: 'rgba(255,255,255,0.1)' 
-},
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#0F2241', 
+    paddingVertical: 15, 
+    paddingHorizontal: 20,  
+    borderBottomWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.1)' 
+  },
   headerLogo: { width: 45, height: 45 },
   headerTitleContainer: { flex: 1, marginLeft: 12 },
   headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
@@ -254,21 +227,15 @@ const styles = StyleSheet.create({
   headerIconAction: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
   miniLogout: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.1)' },
   miniLogoutText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
-  tabsContainer: { flexDirection: 'row', backgroundColor: '#0F2241', borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  tabButton: { flex: 1, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
-  activeTabButton: { borderBottomWidth: 3, borderColor: '#C5A059' },
-  tabButtonText: { color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: 'bold' },
-  activeTabButtonText: { color: '#C5A059' },
   scrollList: { padding: 15, maxWidth: 450, width: '100%', alignSelf: 'center', backgroundColor: '#061329' },
   
-  // NOUVEAUX STYLES DE LA BARRE INFÉRIEURE 
   bottomTabBar: {
     flexDirection: 'row',
     backgroundColor: '#0F2241',
     borderTopWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
     paddingVertical: 10,
-    paddingBottom: 25, // Un peu plus d'espace en bas pour les barres d'onglets iPhone récents
+    paddingBottom: 25, 
     justifyContent: 'space-around',
     alignItems: 'center'
   },

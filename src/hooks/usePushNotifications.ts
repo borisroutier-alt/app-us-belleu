@@ -60,16 +60,23 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
           setToken(pushToken);
 
           try {
+            // 1. Récupération de l'utilisateur Supabase connecté
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              await supabase
-                .from('profils_notifications')
-                .upsert({ 
-                  id: user.id, 
-                  push_token: pushToken,
-                  updated_at: new Date().toISOString()
-                });
-              console.log("🚀 Jeton de notification synchronisé avec Supabase depuis le Hook !");
+            
+            if (user && user.email) {
+              console.log("Tentative de synchronisation du token pour :", user.email);
+              
+              // 2. CORRECTION : On cible la bonne table, la bonne colonne et on filtre par email
+              const { error } = await supabase
+                .from('licencies_autorises')
+                .update({ expo_push_token: pushToken })
+                .eq('email', user.email.toLowerCase().trim());
+
+              if (error) {
+                console.error("Erreur Supabase lors de la synchronisation :", error.message);
+              } else {
+                console.log("🚀 Jeton de notification synchronisé avec la table licencies_autorises !");
+              }
             }
           } catch (error) {
             console.error("Erreur lors de la synchronisation du token avec Supabase :", error);

@@ -3,5 +3,10 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  "deno.enable": true,
+  "deno.unstable": [],
+  "deno.enablePaths": [
+    "supabase/functions/send-news-notification"
+  ]
 }

@@ -1,15 +1,16 @@
+import { useRouter } from 'expo-router'; // 👈 Importation du routeur
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    FlatList,
-    Image,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../supabaseClient';
@@ -34,6 +35,7 @@ interface PhotoClub {
 const { width } = Dimensions.get('window');
 
 const GalerieFeedScreen: React.FC = () => {
+  const router = useRouter(); // 👈 Initialisation du routeur
   const [photos, setPhotos] = useState<PhotoClub[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -43,18 +45,16 @@ const GalerieFeedScreen: React.FC = () => {
 
   useEffect(() => {
     const preparerUtilisateur = async () => {
-      // 1. Récupérer l'utilisateur connecté dans Auth Supabase
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
       setCurrentUserId(user.id);
 
-      // 2. Trouver son identité dans 'licencies_autorises' via la colonne 'nom_prenom'
       if (user.email) {
         try {
           const { data: licence } = await supabase
             .from('licencies_autorises')
-            .select('nom_prenom') // 💡 Adapté à ton image_918881.png
+            .select('nom_prenom')
             .eq('email', user.email.toLowerCase().trim())
             .maybeSingle();
           
@@ -83,13 +83,11 @@ const GalerieFeedScreen: React.FC = () => {
 
       const feedComplet = await Promise.all(
         photosData.map(async (photo) => {
-          // Compter les likes
           const { count: likesCount } = await supabase
             .from('photos_likes')
             .select('*', { count: 'exact', head: true })
             .eq('id_photo', photo.id);
 
-          // Vérifier si j'ai aimé
           let hasLiked = false;
           if (currentUserId) {
             const { data: likeData } = await supabase
@@ -101,7 +99,6 @@ const GalerieFeedScreen: React.FC = () => {
             if (likeData) hasLiked = true;
           }
 
-          // Récupérer les commentaires
           const { data: comsData } = await supabase
             .from('photos_commentaires')
             .select('id, commentaire, id_utilisateur, nom_auteur')
@@ -157,7 +154,7 @@ const GalerieFeedScreen: React.FC = () => {
             id_photo: photoId, 
             id_utilisateur: currentUserId, 
             commentaire: texte,
-            nom_auteur: currentUserIdentity // Enregistre le nom_prenom du licencié
+            nom_auteur: currentUserIdentity
           }
         ])
         .select()
@@ -174,8 +171,14 @@ const GalerieFeedScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Modification du Header pour intégrer le bouton de retour à gauche */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backText}>⬅️ Retour</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>⚽ LE FIL DU CLUB</Text>
+        {/* Vue invisible à droite pour équilibrer le flex de l'alignement centré */}
+        <View style={styles.placeholderRight} />
       </View>
 
       {isLoading ? (
@@ -201,7 +204,6 @@ const GalerieFeedScreen: React.FC = () => {
               <View style={styles.commentsSection}>
                 {item.commentaires.map((com) => (
                   <Text key={com.id} style={styles.commentText}>
-                    {/* Affiche l'identité réelle stockée dans nom_auteur */}
                     <Text style={styles.commentUser}>{com.nom_auteur || "Membre"} : </Text>
                     {com.commentaire}
                   </Text>
@@ -230,8 +232,21 @@ const GalerieFeedScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#061329' },
-  header: { backgroundColor: '#0F2241', padding: 18, alignItems: 'center', borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
+  // Structure flex row alignée pour positionner proprement les éléments du header
+  header: { 
+    flexDirection: 'row',
+    backgroundColor: '#0F2241', 
+    paddingVertical: 18, 
+    paddingHorizontal: 15,
+    alignItems: 'center', 
+    justifyContent: 'space-between',
+    borderBottomWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.1)' 
+  },
+  backButton: { paddingVertical: 4 },
+  backText: { color: '#C5A059', fontWeight: 'bold', fontSize: 14 },
+  title: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold', letterSpacing: 1, textAlign: 'center' },
+  placeholderRight: { width: 60 }, // Équilibre la largeur du bouton retour pour garder le titre centré
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   postCard: { backgroundColor: '#0F2241', marginBottom: 15 },
   postImage: { width: width, height: width * 0.8 },
