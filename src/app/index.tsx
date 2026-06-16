@@ -244,7 +244,7 @@ const Index: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#14294E' },
+  container: { flex: 1, backgroundColor: '#0F2241' }, // 👈 Corrigé ici pour correspondre à l'arrière-plan global et éviter le clash de propriété
   homeContainer: { flex: 1, backgroundColor: '#0F2241' },
   headerBar: { 
     flexDirection: 'row', 
