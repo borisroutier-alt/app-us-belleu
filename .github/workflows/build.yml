@@ -22,7 +22,15 @@ jobs:
           java-version: '17'
 
       - name: 📦 Installation des dépendances
-        run: npm install
+        run: |
+          npm install
+          npm install fetch-nodeshim
+
+      - name: 🔑 Réparer les permissions d'exécution
+        run: |
+          chmod +x node_modules/.bin/expo
+          chmod -R +x node_modules/expo/bin
+        continue-on-error: true
 
       # ÉTAPE AJOUTÉE : Donne les permissions d'exécution aux scripts Expo et Bash
       - name: 🔑 Réparer les permissions d'exécution
