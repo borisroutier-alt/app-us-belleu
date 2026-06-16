@@ -1,14 +1,15 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Image, // 👈 Ajout de l'import pour gérer l'affichage de l'image
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { supabase } from '../../supabaseClient';
 
@@ -20,6 +21,7 @@ interface Article {
   description: string;
   emoji: string;
   color: string;
+  image_url?: string | null; // 👈 Prise en compte de la colonne image dans l'interface
 }
 
 export default function NewsDetail() {
@@ -196,6 +198,16 @@ export default function NewsDetail() {
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{article.category}</Text>
             </View>
+            
+            {/* 📸 COUCHE AFFICHAGE DE LA PHOTO SÉLECTIONNÉE */}
+            {article.image_url ? (
+              <Image 
+                source={{ uri: article.image_url }} 
+                style={styles.articleImage} 
+                resizeMode="cover"
+              />
+            ) : null}
+
             <Text style={styles.title}>{article.title}</Text>
             <Text style={styles.date}>📅 Publié le {article.date}</Text>
             <Text style={styles.description}>{article.description}</Text>
@@ -229,8 +241,20 @@ const styles = StyleSheet.create({
   backButton: { position: 'absolute', top: 20, left: 20, backgroundColor: 'rgba(0,0,0,0.5)', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 15 },
   backText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
   content: { padding: 20 },
-  categoryBadge: { alignSelf: 'flex-start', backgroundColor: 'rgba(197, 160, 89, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#C5A059', marginBottom: 12 },
+  categoryBadge: { alignSelf: 'flex-start', backgroundColor: 'rgba(197, 160, 89, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#C5A059', marginBottom: 15 },
   categoryText: { color: '#C5A059', fontSize: 11, fontWeight: 'bold' },
+  
+  // 🎨 STYLE POUR METTRE EN VALEUR LA PHOTO DE L'ACTU
+  articleImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: 12,
+    marginBottom: 20,
+    backgroundColor: '#0F2241',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)'
+  },
+
   title: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
   date: { color: 'rgba(255, 255, 255, 0.4)', fontSize: 13, marginBottom: 20 },
   description: { color: 'rgba(255, 255, 255, 0.85)', fontSize: 15, lineHeight: 24 },

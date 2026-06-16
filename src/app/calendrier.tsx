@@ -10,7 +10,7 @@ interface Evenement {
   description: string;
   date_evenement: string;
   lieu: string;
-  type?: 'match' | 'autre'; // Récupère le type d'événement depuis Supabase
+  type?: 'match' | 'autre';
 }
 
 const CalendrierClub = () => {
@@ -18,16 +18,28 @@ const CalendrierClub = () => {
   const [events, setEvents] = useState<Evenement[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // 🚀 ÉTAT ADMIN
 
-  const fetchEvents = async () => {
+  const fetchEventsAndAccess = async () => {
     try {
-      // Récupération de l'instant présent au format ISO standard pour le nettoyage automatique
-      const maintenant = new Date().toISOString();
+      // 1. VÉRIFICATION DU STATUT ADMIN (Comme dans l'index)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && user.email) {
+        const { data: licence } = await supabase
+          .from('licencies_autorises')
+          .select('est_admin')
+          .eq('email', user.email.toLowerCase().trim())
+          .maybeSingle();
+        
+        setIsAdmin(!!licence?.est_admin);
+      }
 
+      // 2. RÉCUPÉRATION DES ÉVÉNEMENTS
+      const maintenant = new Date().toISOString();
       const { data, error } = await supabase
         .from('calendrier')
         .select('*')
-        .gte('date_evenement', maintenant) // Masque automatiquement les événements passés
+        .gte('date_evenement', maintenant)
         .order('date_evenement', { ascending: true });
 
       if (error) throw error;
@@ -41,7 +53,7 @@ const CalendrierClub = () => {
   };
 
   useEffect(() => {
-    fetchEvents();
+    fetchEventsAndAccess();
   }, []);
 
   const formatNewDate = (dateString: string) => {
@@ -70,16 +82,15 @@ const CalendrierClub = () => {
           refreshControl={
             <RefreshControl 
               refreshing={refreshing} 
-              onRefresh={() => { setRefreshing(true); fetchEvents(); }} 
+              onRefresh={() => { setRefreshing(true); fetchEventsAndAccess(); }} 
               tintColor="#C5A059" 
             />
           }
           ListEmptyComponent={<Text style={styles.emptyText}>Aucun événement de prévu pour le moment. 📆</Text>}
           renderItem={({ item }) => {
-            // Configuration dynamique des styles selon le type
             const isMatch = item.type === 'match';
-            const accentColor = isMatch ? '#1E3A8A' : '#C5A059'; // Bleu Roi pour Match, Or pour Autre
-            const dateTextColor = isMatch ? '#3B82F6' : '#C5A059'; // Version claire pour le texte de la date
+            const accentColor = isMatch ? '#1E3A8A' : '#C5A059';
+            const dateTextColor = isMatch ? '#3B82F6' : '#C5A059';
 
             return (
               <View style={[styles.card, { borderColor: accentColor }]}>
@@ -90,6 +101,28 @@ const CalendrierClub = () => {
                 <Text style={styles.cardTitle}>{item.titre}</Text>
                 {item.description ? <Text style={styles.cardDesc}>{item.description}</Text> : null}
                 <Text style={styles.cardLieu}>📍 {item.lieu}</Text>
+
+                {/* 🚀 NOUVEAU : Bouton d'action Admin visible uniquement si isAdmin est true */}
+                {isAdmin && (
+                  <TouchableOpacity
+                    style={styles.adminEditButton}
+                    onPress={() => {
+                      router.push({
+                        pathname: '/admin/calendrier-gestion',
+                        params: {
+                          id: item.id,
+                          titre: item.titre,
+                          description: item.description || '',
+                          lieu: item.lieu,
+                          type: item.type || 'autre',
+                          date_evenement: item.date_evenement
+                        }
+                      });
+                    }}
+                  >
+                    <Text style={styles.adminEditButtonText}>⚙️ MODIFIER / SUPPRIMER</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             );
           }}
@@ -113,6 +146,24 @@ const styles = StyleSheet.create({
   cardTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
   cardDesc: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 4 },
   cardLieu: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 8 },
+  
+  // 🚀 STYLES DU BOUTON ADMIN
+  adminEditButton: {
+    marginTop: 15,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(197, 160, 89, 0.1)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(197, 160, 89, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adminEditButtonText: {
+    color: '#C5A059',
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
 });
 
 export default CalendrierClub;

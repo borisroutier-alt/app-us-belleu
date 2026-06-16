@@ -36,11 +36,13 @@ const registerForPushNotificationsAsync = async () => {
 
   try {
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: '8ffb7218-c17e-41f5-a838-843a7aa4c4a1' // Ton ID de projet Expo
+      projectId: '8ffb7218-c17e-41f5-a838-843a7aa4c4a1' // ID de projet Expo
     });
     return tokenData.data;
   } catch (error) {
-    console.error("Erreur lors de la génération du push token :", error);
+    // MODIFICATION ICI : On utilise console.warn au lieu de console.error 
+    // pour éviter que l'application ne plante en cas de panne des serveurs Expo.
+    console.warn("⚠️ Serveurs Expo indisponibles (Erreur 503). Le push token sera généré plus tard :", error);
     return null;
   }
 };

@@ -1,9 +1,10 @@
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
+  RefreshControl, // 👈 Ajout pour le Pull-to-Refresh
   StatusBar,
   StyleSheet,
   Text,
@@ -30,11 +31,13 @@ const Index: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false); // 👈 État pour le pull-to-refresh
   const [isPhotoUploading, setIsPhotoUploading] = useState(false);
   const [news, setNews] = useState<Article[]>([]);
 
   usePushNotifications(isLoggedIn);
 
+  // Vérification de la session au démarrage
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setIsLoggedIn(true);
@@ -48,8 +51,9 @@ const Index: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchDataFromCloud = async () => {
-    setIsFetching(true);
+  // Fonction principale de chargement des données
+  const fetchDataFromCloud = async (showGlobalLoader = true) => {
+    if (showGlobalLoader) setIsFetching(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user && user.email) {
@@ -62,7 +66,11 @@ const Index: React.FC = () => {
         setIsAdmin(!!licence?.est_admin);
       }
 
-      const { data: newsData, error: newsError } = await supabase.from('news').select('*').order('created_at', { ascending: false });
+      const { data: newsData, error: newsError } = await supabase
+        .from('news')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
       if (newsError) throw newsError;
       setNews(newsData || []);
 
@@ -70,12 +78,24 @@ const Index: React.FC = () => {
       alert("Erreur de chargement Cloud : " + error.message);
     } finally {
       setIsFetching(false);
+      setIsRefreshing(false); // Arrête l'animation de rafraîchissement
     }
   };
 
-  useEffect(() => {
-    if (isLoggedIn) fetchDataFromCloud();
-  }, [isLoggedIn]);
+  // 🚀 ACTION 1 : Rafraîchir automatiquement dès que l'écran revient au premier plan
+  useFocusEffect(
+    useCallback(() => {
+      if (isLoggedIn) {
+        fetchDataFromCloud(false); // "false" évite le gros rond de chargement au milieu de l'écran
+      }
+    }, [isLoggedIn])
+  );
+
+  // 🚀 ACTION 2 : Fonction déclenchée par le "Tirer pour rafraîchir"
+  const onRefresh = () => {
+    setIsRefreshing(true);
+    fetchDataFromCloud(false); 
+  };
 
   const handleLogout = async () => {
     try {
@@ -94,7 +114,7 @@ const Index: React.FC = () => {
       
       setIsPhotoUploading(true);
       const publicUrl = await selectionnerEtEnvoyerPhoto(user.id);
-      if (publicUrl) fetchDataFromCloud();
+      if (publicUrl) fetchDataFromCloud(false);
     } catch (error: any) {
       console.error(error);
     } finally {
@@ -148,7 +168,7 @@ const Index: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* SECTION DU FIL D'ACTUALITÉS DIRECT (SANS LES SOUS-ONGLETS) */}
+      {/* FIL D'ACTUALITÉS DIRECT */}
       <View style={{ flex: 1, backgroundColor: '#061329' }}>
         {isFetching ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -161,7 +181,16 @@ const Index: React.FC = () => {
             keyExtractor={(item) => item.id} 
             renderItem={({ item }) => <NewsCard item={item} />} 
             contentContainerStyle={styles.scrollList} 
-            showsVerticalScrollIndicator={false} 
+            showsVerticalScrollIndicator={false}
+            // 🚀 Intégration du système Pull-to-Refresh
+            refreshControl={
+              <RefreshControl 
+                refreshing={isRefreshing} 
+                onRefresh={onRefresh} 
+                tintColor="#C5A059" // Couleur du loader sur iOS
+                colors={["#C5A059"]} // Couleur du loader sur Android
+              />
+            }
           />
         )}
       </View>
@@ -184,6 +213,12 @@ const Index: React.FC = () => {
           <Text style={styles.tabBarLabel}>Galerie</Text>
         </TouchableOpacity>
 
+        {/* @ts-ignore */}
+        <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/sponsors')}>
+          <Text style={styles.tabBarIcon}>🤝</Text>
+          <Text style={styles.tabBarLabel}>Sponsors</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/contact')}>
           <Text style={styles.tabBarIcon}>📞</Text>
           <Text style={styles.tabBarLabel}>Contact</Text>
@@ -199,7 +234,7 @@ const Index: React.FC = () => {
         {isAdmin && (
           <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/admin')}>
             <Text style={styles.tabBarIcon}>👑</Text>
-            <Text style={styles.tabBarLabel}>Configuration</Text>
+            <Text style={styles.tabBarLabel}>Admin</Text>
           </TouchableOpacity>
         )}
       </View>
