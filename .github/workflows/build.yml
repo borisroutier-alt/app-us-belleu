@@ -24,7 +24,7 @@ jobs:
       - name: 📦 Installation des dépendances
         run: |
           npm install --legacy-peer-deps
-          npm install -g expo-cli
+          npm install fetch-nodeshim
 
       - name: 🔑 Réparer les permissions d'exécution
         run: |
@@ -32,7 +32,13 @@ jobs:
           chmod -R +x node_modules/expo/bin
         continue-on-error: true
 
-      - name: 🤖 Génération des fichiers natifs Android (Prebuild Forcé)
+      - name: 🛠️ Forcer l'injection du module manquant dans Expo
+        run: |
+          mkdir -p node_modules/expo/node_modules/fetch-nodeshim
+          cp -r node_modules/fetch-nodeshim/* node_modules/expo/node_modules/fetch-nodeshim/
+        continue-on-error: true
+
+      - name: 🤖 Génération des fichiers natifs Android (Prebuild Forcé V2)
         run: npx expo prebuild --platform android
 
       - name: 🏗 Compilation de l'APK avec Gradle
