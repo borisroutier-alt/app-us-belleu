@@ -21,24 +21,20 @@ jobs:
       - name: 📦 Installation des dépendances
         run: |
           npm ci --legacy-peer-deps
-          npm install fetch-nodeshim --save-dev
-
-      - name: 🔑 Réparer les permissions d'exécution
-        run: |
-          chmod +x node_modules/.bin/expo
-          chmod -R +x node_modules/expo/bin
-        continue-on-error: true
 
       - name: 🚀 Compilation du site Web Expo
         run: npx expo export --platform web --clear
-        env:
-          EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
 
-      - name: 🛠️ Réparation des chemins pour sous-dossier (GitHub Pages)
+      - name: 🛠️ Correction des chemins pour GitHub Pages
         run: |
-          # Remplace les références absolues (commençant par /) par des chemins relatifs
-          sed -i 's|href="/|href="./|g' dist/index.html
-          sed -i 's|src="/|src="./|g' dist/index.html
+          # 1. On remplace les chemins commençant par /_expo par des chemins relatifs _expo
+          # Cela transforme <script src="/_expo/..."> en <script src="_expo/...">
+          sed -i 's|src="/_expo|src="_expo|g' dist/index.html
+          sed -i 's|href="/_expo|href="_expo|g' dist/index.html
+          
+          # 2. On traite aussi les autres assets si nécessaire
+          sed -i 's|href="/assets|href="./assets|g' dist/index.html
+          sed -i 's|src="/assets|src="./assets|g' dist/index.html
 
       - name: 🌐 Déploiement sur GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
