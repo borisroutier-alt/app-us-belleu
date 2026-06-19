@@ -21,7 +21,17 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: 🚀 Build
+        # On force l'export statique proprement
         run: npx expo export --platform web --clear
+
+      - name: 🛠️ Setup GitHub Pages Redirection
+        run: |
+          # Création du fichier 404 pour gérer le routage SPA
+          cp dist/index.html dist/404.html
+          # Forcer le chemin de base dans le index.html si Expo l'a oublié
+          sed -i 's|src="/|src="/app-us-belleu/|g' dist/index.html
+          sed -i 's|href="/_expo|href="/app-us-belleu/_expo|g' dist/index.html
+          sed -i 's|src="/_expo|src="/app-us-belleu/_expo|g' dist/index.html
 
       - name: Upload
         uses: actions/upload-pages-artifact@v3
