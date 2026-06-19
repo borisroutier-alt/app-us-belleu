@@ -13,30 +13,20 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Installation des dépendances
+      - name: Installation
         run: npm ci --legacy-peer-deps
 
-      - name: 🚀 Compilation du site Web Expo
+      - name: 🚀 Build
         run: npx expo export --platform web --clear
-        env:
-          EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
 
-      # Étape cruciale pour le mode statique sur GitHub Pages
-      - name: Préparation du dossier pour SPA
-        run: cp dist/index.html dist/404.html
-
-      # Utilisation de l'outil officiel d'upload d'artefact
-      - name: Upload pages artifact
+      - name: Upload
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'dist'
 
-      # Utilisation de l'outil officiel de déploiement
-      - name: 🌐 Déploiement sur GitHub Pages
+      - name: 🌐 Déploiement
         uses: actions/deploy-pages@v4
