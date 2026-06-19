@@ -21,8 +21,19 @@
       "googleServicesFile": "./google-services.json"
     },
     "web": {
+      "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "pwa": {
+        "enabled": true,
+        "title": "US Belleu",
+        "shortName": "USB",
+        "description": "Application officielle de l'US Belleu",
+        "backgroundColor": "#14294E",
+        "themeColor": "#14294E",
+        "display": "standalone",
+        "orientation": "portrait"
+      }
     },
     "plugins": [
       "expo-router",
