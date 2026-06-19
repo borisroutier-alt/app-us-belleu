@@ -25,19 +25,10 @@ jobs:
           # On donne explicitement les droits d'exécution
           chmod -R +x node_modules/.bin/
 
-      - name: Compilation
-        run: npx expo export --platform web --clear
-        env:
-          EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
-
-      - name: 🛠️ Réparation des chemins (Méthode robuste)
+      - name: 📦 Compilation
         run: |
-          # Correction du slash initial pour éviter le saut à la racine
-          # On remplace src="/_expo" par src="./_expo"
-          sed -i 's|src="/_expo|src="./_expo|g' dist/index.html
-          sed -i 's|href="/_expo|href="./_expo|g' dist/index.html
-          sed -i 's|src="/assets|src="./assets|g' dist/index.html
-          sed -i 's|href="/assets|href="./assets|g' dist/index.html
+          npm ci --legacy-peer-deps
+          npx expo export --platform web --clear
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3

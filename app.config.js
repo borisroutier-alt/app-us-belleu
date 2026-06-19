@@ -5,7 +5,9 @@ module.exports = {
     web: {
       bundler: "metro",
       output: "static",
-      // On retire baseUrl pour forcer l'utilisation de chemins relatifs via le script ci-dessous
+      // C'est ici que tu dois définir le chemin relatif pour le sous-dossier
+      // Expo Router l'utilisera pour construire ses routes internes
+      baseUrl: "/app-us-belleu/", 
     },
     extra: {
       router: {
