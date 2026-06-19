@@ -30,15 +30,18 @@ jobs:
         continue-on-error: true
 
       - name: 🚀 Compilation du site Web Expo
-        run: npx expo export --platform web --clear --public-url "/app-us-belleu/"
+        run: npx expo export --platform web --clear
         env:
           EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
+
+      - name: 🛠️ Réparation des chemins pour sous-dossier (GitHub Pages)
+        run: |
+          # Remplace les références absolues (commençant par /) par des chemins relatifs
+          sed -i 's|href="/|href="./|g' dist/index.html
+          sed -i 's|src="/|src="./|g' dist/index.html
 
       - name: 🌐 Déploiement sur GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: dist
           branch: main
-          # Cette option est cruciale pour les sous-dossiers : 
-          # elle force l'action à ne pas écraser tout le dépôt
-          # et à bien gérer les assets.
