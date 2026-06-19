@@ -15,12 +15,12 @@ jobs:
       - name: 🛠️ Configuration de Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20 # On passe en version 20 pour corriger l'erreur de version
+          node-version: 20
           cache: 'npm'
 
       - name: 📦 Installation des dépendances
         run: |
-          npm install
+          npm ci --legacy-peer-deps
           npm install fetch-nodeshim --save-dev
 
       - name: 🔑 Réparer les permissions d'exécution
@@ -29,11 +29,5 @@ jobs:
           chmod -R +x node_modules/expo/bin
         continue-on-error: true
 
-      - name: 🚀 Compilation du site Web Expo
-        run: npx expo export --platform web
-
-      - name: 🌐 Déploiement sur GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: dist
-          branch: gh-pages
+      - name: 🚀 Compilation du site Web Expo (avec vidage de cache)
+        run: npx expo export --platform web --clear
