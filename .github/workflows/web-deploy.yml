@@ -17,23 +17,22 @@ jobs:
         with:
           node-version: 20
 
-      - name: 📦 Build
-        run: |
-          npm ci --legacy-peer-deps
-          npx expo export --platform web --clear
+      - name: 🚀 Compilation du site Web Expo
+        run: npx expo export --platform web --clear
         env:
           EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
 
-      - name: 🛠️ Réparation des chemins
+      - name: 🛠️ Correction chirurgicale des chemins
         run: |
-          # Correction du bug d'espace dans le chemin constaté dans tes logs (image_e7f4af.png)
-          find dist -name "*.html" -exec sed -i 's|/ |/|g' {} +
-          # Forcer les chemins vers le sous-dossier
-          sed -i 's|src="/_expo|src="./_expo|g' dist/index.html
-          sed -i 's|href="/_expo|href="./_expo|g' dist/index.html
+          # Cette commande remplace systématiquement les chemins qui commencent par /_expo
+          # par des chemins relatifs _expo
+          # On utilise sed pour modifier le fichier index.html généré
+          sed -i 's|src="/_expo|src="_expo|g' dist/index.html
+          sed -i 's|href="/_expo|href="_expo|g' dist/index.html
+          sed -i 's|src="/assets|src="./assets|g' dist/index.html
+          sed -i 's|href="/assets|href="./assets|g' dist/index.html
 
       - name: 🌐 Déploiement
-        uses: JamesIves/github-pages-deploy-action@v4
+        uses: actions/deploy-pages@v4
         with:
-          folder: dist
-          branch: main
+          artifact_name: github-pages-artifact
