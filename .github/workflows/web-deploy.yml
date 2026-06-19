@@ -31,3 +31,9 @@ jobs:
 
       - name: 🚀 Compilation du site Web Expo (avec vidage de cache)
         run: npx expo export --platform web --clear
+
+      - name: 🌐 Déploiement sur GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: main # Publie le site compilé directement sur la branche principale
