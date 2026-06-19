@@ -6,30 +6,34 @@ on:
       - code-source
 
 jobs:
-  build_and_deploy:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      pages: write      # Nécessaire pour le déploiement
-      id-token: write   # Nécessaire pour l'authentification
     steps:
-      - uses: actions/checkout@v4
+      - name: 📋 Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: 🛠️ Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Build
+      - name: 📦 Build
         run: |
           npm ci --legacy-peer-deps
           npx expo export --platform web --clear
         env:
           EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: 'dist'
+      - name: 🛠️ Réparation des chemins
+        run: |
+          # Correction du bug d'espace dans le chemin constaté dans tes logs (image_e7f4af.png)
+          find dist -name "*.html" -exec sed -i 's|/ |/|g' {} +
+          # Forcer les chemins vers le sous-dossier
+          sed -i 's|src="/_expo|src="./_expo|g' dist/index.html
+          sed -i 's|href="/_expo|href="./_expo|g' dist/index.html
 
-      - name: Deploy
-        uses: actions/deploy-pages@v4
+      - name: 🌐 Déploiement
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: main

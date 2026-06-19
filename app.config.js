@@ -1,18 +1,16 @@
-module.exports = ({ config }) => {
-  return {
-    ...config,
+module.exports = {
+  expo: {
+    name: "usbelleu-app",
+    slug: "usbelleu-app",
     web: {
-      ...config.web,
-      // Le "." indique d'utiliser des chemins relatifs par rapport au dossier courant
-      baseUrl: ".", 
+      bundler: "metro",
+      output: "static",
+      // On retire baseUrl pour forcer l'utilisation de chemins relatifs via le script ci-dessous
     },
     extra: {
-      ...config.extra,
       router: {
-        ...config.extra?.router,
-        // 'origin: false' empêche Expo de forcer l'URL racine
         origin: false,
       },
     },
-  };
+  },
 };
