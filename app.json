@@ -23,6 +23,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
+      "baseUrl": "/app-us-belleu",
       "favicon": "./assets/images/favicon.png",
       "pwa": {
         "enabled": true,
