@@ -29,5 +29,16 @@ jobs:
           chmod -R +x node_modules/expo/bin
         continue-on-error: true
 
-      - name: 🚀 Compilation du site Web Expo (avec vidage de cache)
+      - name: 🚀 Compilation du site Web Expo
         run: npx expo export --platform web --clear
+        env:
+          EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
+
+      - name: 🌐 Déploiement sur GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: main
+          # Cette option est cruciale pour les sous-dossiers : 
+          # elle force l'action à ne pas écraser tout le dépôt
+          # et à bien gérer les assets.

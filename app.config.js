@@ -3,8 +3,8 @@ module.exports = ({ config }) => {
     ...config,
     web: {
       ...config.web,
-      // On force le baseUrl spécifiquement pour le web ici
-      baseUrl: "/app-us-belleu",
+      // Le "." permet aux liens d'être relatifs au fichier actuel
+      baseUrl: ".", 
     },
     extra: {
       ...config.extra,
