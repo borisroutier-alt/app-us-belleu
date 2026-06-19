@@ -25,15 +25,17 @@ jobs:
           # On donne explicitement les droits d'exécution
           chmod -R +x node_modules/.bin/
 
-      - name: 📦 Compilation
+      - name: 🚀 Compilation
+        run: npx expo export --platform web --clear
+
+      - name: 🛠️ Réparation des chemins (Suppression du slash initial)
         run: |
-          npm ci --legacy-peer-deps
-          npx expo export --platform web --clear
+          # Cette commande remplace tous les 'href="/' ou 'src="/' par './' 
+          # pour transformer les chemins absolus en chemins relatifs.
+          sed -i 's|href="/|href="./|g' dist/index.html
+          sed -i 's|src="/|src="./|g' dist/index.html
 
-      - name: Upload pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: 'dist'
-
-      - name: Deploy to GitHub Pages
+      - name: 🌐 Déploiement
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-artifact
