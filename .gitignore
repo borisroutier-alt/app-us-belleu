@@ -1,4 +1,5 @@
 # Fichiers Firebase sensibles
+us-belleu-app-*.json
 *.json
 !app.json
 !package.json
