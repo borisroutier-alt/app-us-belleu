@@ -21,6 +21,12 @@ jobs:
       - name: 📦 Installation des dépendances
         run: npm install
 
+      - name: 🔑 Réparer les permissions d'exécution
+        run: |
+          chmod +x node_modules/.bin/expo
+          chmod -R +x node_modules/expo/bin
+        continue-on-error: true
+
       - name: 🚀 Compilation du site Web Expo
         run: npx expo export --platform web
 
@@ -28,4 +34,4 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: dist
-          branch: main
+          branch: gh-pages # On envoie le site ici pour ne pas écraser ton code sur 'main'
