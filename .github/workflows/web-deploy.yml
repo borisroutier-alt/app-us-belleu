@@ -3,7 +3,7 @@ name: Déploiement Web PWA
 on:
   push:
     branches:
-      - main
+      - code-source
 
 jobs:
   deploy:
