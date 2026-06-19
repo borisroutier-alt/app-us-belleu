@@ -28,14 +28,17 @@ jobs:
       - name: 🚀 Compilation
         run: npx expo export --platform web --clear
 
-      - name: 🛠️ Réparation des chemins (Suppression du slash initial)
+      - name: 🛠️ Réparation des chemins
         run: |
-          # Cette commande remplace tous les 'href="/' ou 'src="/' par './' 
-          # pour transformer les chemins absolus en chemins relatifs.
           sed -i 's|href="/|href="./|g' dist/index.html
           sed -i 's|src="/|src="./|g' dist/index.html
 
+      # ÉTAPE AJOUTÉE : Création explicite de l'artefact
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'dist'
+
+      # ÉTAPE MODIFIÉE : Déploiement utilisant l'artefact créé
       - name: 🌐 Déploiement
         uses: actions/deploy-pages@v4
-        with:
-          artifact_name: github-pages-artifact
