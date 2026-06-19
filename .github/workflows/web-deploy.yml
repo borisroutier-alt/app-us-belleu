@@ -15,11 +15,13 @@ jobs:
       - name: 🛠️ Configuration de Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20 # On passe en version 20 pour corriger l'erreur de version
           cache: 'npm'
 
       - name: 📦 Installation des dépendances
-        run: npm install
+        run: |
+          npm install
+          npm install fetch-nodeshim --save-dev
 
       - name: 🔑 Réparer les permissions d'exécution
         run: |
@@ -34,4 +36,4 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: dist
-          branch: gh-pages # On envoie le site ici pour ne pas écraser ton code sur 'main'
+          branch: gh-pages
