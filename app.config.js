@@ -5,7 +5,13 @@ module.exports = {
     web: {
       bundler: "metro",
       output: "static",
-      basePath: "/app-us-belleu", // C'est ici que ça se joue
+      basePath: "/app-us-belleu", // Ton sous-dossier
+    },
+    extra: {
+      // Force le routeur à comprendre le chemin complet
+      router: {
+        origin: "https://borisroutier-alt.github.io/app-us-belleu",
+      },
     },
   },
 };
