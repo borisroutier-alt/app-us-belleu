@@ -3,13 +3,14 @@ module.exports = ({ config }) => {
     ...config,
     web: {
       ...config.web,
-      // Le "." permet aux liens d'être relatifs au fichier actuel
+      // Le "." indique d'utiliser des chemins relatifs par rapport au dossier courant
       baseUrl: ".", 
     },
     extra: {
       ...config.extra,
       router: {
         ...config.extra?.router,
+        // 'origin: false' empêche Expo de forcer l'URL racine
         origin: false,
       },
     },
