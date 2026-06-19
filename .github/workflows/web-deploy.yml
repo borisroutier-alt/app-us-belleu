@@ -6,38 +6,30 @@ on:
       - code-source
 
 jobs:
-  deploy:
+  build_and_deploy:
     runs-on: ubuntu-latest
+    permissions:
+      pages: write      # Nécessaire pour le déploiement
+      id-token: write   # Nécessaire pour l'authentification
     steps:
-      - name: 📋 Checkout du code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🛠️ Configuration de Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      - name: 📦 Installation des dépendances
+      - name: Build
         run: |
           npm ci --legacy-peer-deps
+          npx expo export --platform web --clear
+        env:
+          EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
 
-      - name: 🚀 Compilation du site Web Expo
-        run: npx expo export --platform web --clear
-
-      - name: 🛠️ Correction des chemins pour GitHub Pages
-        run: |
-          # 1. On remplace les chemins commençant par /_expo par des chemins relatifs _expo
-          # Cela transforme <script src="/_expo/..."> en <script src="_expo/...">
-          sed -i 's|src="/_expo|src="_expo|g' dist/index.html
-          sed -i 's|href="/_expo|href="_expo|g' dist/index.html
-          
-          # 2. On traite aussi les autres assets si nécessaire
-          sed -i 's|href="/assets|href="./assets|g' dist/index.html
-          sed -i 's|src="/assets|src="./assets|g' dist/index.html
-
-      - name: 🌐 Déploiement sur GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          folder: dist
-          branch: main
+          path: 'dist'
+
+      - name: Deploy
+        uses: actions/deploy-pages@v4
