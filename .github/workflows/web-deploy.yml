@@ -19,26 +19,24 @@ jobs:
         with:
           node-version: 20
 
-      - name: Installation et permissions
-        run: |
-          npm ci --legacy-peer-deps
-          # On donne explicitement les droits d'exécution
-          chmod -R +x node_modules/.bin/
+      - name: Installation des dépendances
+        run: npm ci --legacy-peer-deps
 
-      - name: 🚀 Compilation
+      - name: 🚀 Compilation du site Web Expo
         run: npx expo export --platform web --clear
+        env:
+          EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
 
-      - name: 🛠️ Réparation des chemins
-        run: |
-          sed -i 's|href="/|href="./|g' dist/index.html
-          sed -i 's|src="/|src="./|g' dist/index.html
+      # Étape cruciale pour le mode statique sur GitHub Pages
+      - name: Préparation du dossier pour SPA
+        run: cp dist/index.html dist/404.html
 
-      # ÉTAPE AJOUTÉE : Création explicite de l'artefact
+      # Utilisation de l'outil officiel d'upload d'artefact
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'dist'
 
-      # ÉTAPE MODIFIÉE : Déploiement utilisant l'artefact créé
-      - name: 🌐 Déploiement
+      # Utilisation de l'outil officiel de déploiement
+      - name: 🌐 Déploiement sur GitHub Pages
         uses: actions/deploy-pages@v4
