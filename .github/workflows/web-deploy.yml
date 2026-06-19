@@ -30,7 +30,7 @@ jobs:
         continue-on-error: true
 
       - name: 🚀 Compilation du site Web Expo
-        run: npx expo export --platform web --clear
+        run: npx expo export --platform web --clear --public-url "/app-us-belleu/"
         env:
           EXPO_PUBLIC_BASE_URL: "/app-us-belleu/"
 
