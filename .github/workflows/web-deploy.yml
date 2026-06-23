@@ -21,14 +21,8 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: 🚀 Build
+        # Le flag --clear assure une build propre
         run: npx expo export --platform web --clear
-
-      - name: 🛠️ Setup GitHub Pages Compatibility
-        run: |
-          # Création du 404.html pour les routes SPA
-          cp dist/index.html dist/404.html
-          # Création du fichier .nojekyll pour éviter que GitHub ne supprime le dossier _expo
-          touch dist/.nojekyll
 
       - name: Upload
         uses: actions/upload-pages-artifact@v3

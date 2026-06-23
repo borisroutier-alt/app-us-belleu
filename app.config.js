@@ -5,12 +5,17 @@ module.exports = {
     web: {
       bundler: "metro",
       output: "static",
-      basePath: "/app-us-belleu", // Ton sous-dossier
+      // On retire le basePath car le HashRouting rend le site agnostique au chemin
+      basePath: "/", 
     },
+    // On force l'utilisation du HashRouter dans le bundle web
     extra: {
-      // Force le routeur à comprendre le chemin complet
       router: {
-        origin: "https://borisroutier-alt.github.io/app-us-belleu",
+        origin: false,
+        experiments: {
+          // Ceci active la navigation par hash (ex: /#/classement)
+          typedRoutes: true,
+        },
       },
     },
   },
