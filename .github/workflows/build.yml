@@ -1,0 +1,53 @@
+name: Build APK Production (Sans Expo Cloud)
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏗 Checkout du projet
+        uses: actions/checkout@v3
+
+      - name: 🟢 Configuration de Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: ☕ Configuration de Java JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📦 Installation propre des dépendances
+        run: |
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps --install-links
+          npm install fetch-nodeshim --no-save
+
+      - name: 🔑 Réparer les permissions d'exécution
+        run: |
+          chmod +x node_modules/.bin/expo
+          chmod -R +x node_modules/expo/bin
+        continue-on-error: true
+
+      - name: 🧹 Nettoyage du cache Expo CLI
+        run: npx expo opt-in-to-eas-cli-demoted-warning --disable-colors || true
+        continue-on-error: true
+
+      - name: 🤖 Génération des fichiers natifs Android (Prebuild Final)
+        run: npx expo prebuild --platform android --no-install
+
+      - name: 🏗 Compilation de l'APK avec Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: 📦 Sauvegarder l'APK sur GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-club-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk

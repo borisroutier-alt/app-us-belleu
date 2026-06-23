@@ -1,0 +1,38 @@
+name: Build APK Dev (Sans Expo Cloud)
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏗 Checkout du projet
+        uses: actions/checkout@v3
+
+      - name: 🟢 Configuration de Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: ☕ Configuration de Java JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📦 Installation des dépendances
+        run: npm install
+
+      - name: 🤖 Génération des fichiers natifs Android en mode Dev
+        run: npx expo prebuild --platform android --template expo-template-bare-minimum
+
+      - name: 🏗 Compilation de l'APK de Debug (Dev)
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      - name: 📦 Sauvegarder l'APK de DEV sur GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-club-dev-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
