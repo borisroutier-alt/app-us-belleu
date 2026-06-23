@@ -25,7 +25,7 @@
       "output": "static",
       "baseUrl": "/",
       "favicon": "./assets/images/favicon-v2.png",
-      "appleTouchIcon": "./assets/images/icon.png",
+      "appleTouchIcon": "./assets/images/apple-touch-icon.png",
       "pwa": {
         "enabled": true,
         "title": "US Belleu",
