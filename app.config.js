@@ -5,13 +5,10 @@ module.exports = {
     web: {
       bundler: "metro",
       output: "static",
-      // Supprimez "basePath" complètement
+      // On supprime basePath ici.
     },
-    // On force le routeur en mode "hash"
-    extra: {
-      router: {
-        origin: false,
-      },
+    experiments: {
+      typedRoutes: true,
     },
   },
 };

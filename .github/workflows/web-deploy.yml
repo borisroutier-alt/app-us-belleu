@@ -23,15 +23,15 @@ jobs:
       - name: 🚀 Build
         run: npx expo export --platform web --clear
 
-      - name: 🛠️ Correction des chemins (Injection de basePath)
+      - name: 🛠️ Correction des chemins (Relatifs)
         run: |
-          # 1. Création du fichier .nojekyll pour que GitHub ne supprime pas les dossiers _expo
+          # 1. Empêcher Jekyll de traiter les dossiers cachés
           touch dist/.nojekyll
-          # 2. Correction du index.html pour pointer vers le sous-dossier
-          sed -i 's|src="/_expo|src="/app-us-belleu/_expo|g' dist/index.html
-          sed -i 's|href="/_expo|href="/app-us-belleu/_expo|g' dist/index.html
-          # 3. Correction des fichiers JS pour qu'ils sachent où charger les chunks
-          find dist/_expo/static/js -name "*.js" -exec sed -i 's|/_expo|/app-us-belleu/_expo|g' {} +
+          # 2. Remplacer tous les liens absolus (ex: src="/_expo") par des relatifs (ex: src="./_expo")
+          # Cette commande modifie tous les fichiers HTML et JS générés
+          find dist -type f \( -name "*.html" -o -name "*.js" \) -exec sed -i 's|src="/_|src="./_|g' {} +
+          find dist -type f \( -name "*.html" -o -name "*.js" \) -exec sed -i 's|href="/_|href="./_|g' {} +
+          find dist -type f -name "*.js" -exec sed -i 's|: "/_|: "./_|g' {} +
 
       - name: Upload
         uses: actions/upload-pages-artifact@v3
