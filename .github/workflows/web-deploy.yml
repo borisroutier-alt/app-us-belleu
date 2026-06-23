@@ -1,42 +1,17 @@
-name: Déploiement Web PWA
-
+name: Déploiement sur Vercel
 on:
   push:
     branches:
       - code-source
-
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
         with:
-          node-version: 20
-
-      - name: Installation
-        run: npm ci --legacy-peer-deps
-
-      - name: 🚀 Build
-        run: npx expo export --platform web --clear
-
-      - name: 🛠️ Correction des chemins (Relatifs)
-        run: |
-          # 1. Empêcher Jekyll de traiter les dossiers cachés
-          touch dist/.nojekyll
-          # 2. Remplacer tous les liens absolus (ex: src="/_expo") par des relatifs (ex: src="./_expo")
-          # Cette commande modifie tous les fichiers HTML et JS générés
-          find dist -type f \( -name "*.html" -o -name "*.js" \) -exec sed -i 's|src="/_|src="./_|g' {} +
-          find dist -type f \( -name "*.html" -o -name "*.js" \) -exec sed -i 's|href="/_|href="./_|g' {} +
-          find dist -type f -name "*.js" -exec sed -i 's|: "/_|: "./_|g' {} +
-
-      - name: Upload
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: 'dist'
-
-      - name: 🌐 Déploiement
-        uses: actions/deploy-pages@v4
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
