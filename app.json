@@ -25,9 +25,9 @@
       "output": "static",
       "baseUrl": "/",
       "favicon": "./assets/images/favicon-v2.png",
-      "appleTouchIcon": "./assets/images/icon.png", // <--- AJOUTEZ CETTE LIGNE
+      "appleTouchIcon": "./assets/images/icon.png",
       "pwa": {
-        "enabled": true
+        "enabled": true,
         "title": "US Belleu",
         "shortName": "USB",
         "description": "Application officielle de l'US Belleu",
