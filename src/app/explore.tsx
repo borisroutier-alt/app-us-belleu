@@ -3,12 +3,13 @@ import { SymbolView } from 'expo-symbols';
 import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+// Imports corrigés avec des chemins relatifs
 import { ExternalLink } from '../components/external-link';
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { Collapsible } from '../components/ui/collapsible';
 import { WebBadge } from '../components/web-badge';
+import { BottomTabInset, MaxContentWidth, Spacing } from '../constants/theme';
 import { useTheme } from '../hooks/use-theme';
 
 export default function TabTwoScreen() {
@@ -81,7 +82,7 @@ export default function TabTwoScreen() {
                 project.
               </ThemedText>
               <Image
-                source={require('@/assets/images/tutorial-web.png')}
+                source={require('../assets/images/tutorial-web.png')}
                 style={styles.imageTutorial}
               />
             </ThemedView>
@@ -93,30 +94,10 @@ export default function TabTwoScreen() {
               <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
               screen densities.
             </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
+            <Image source={require('../assets/images/react-logo.png')} style={styles.imageReact} />
             <ExternalLink href="https://reactnative.dev/docs/images">
               <ThemedText type="linkPrimary">Learn more</ThemedText>
             </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
           </Collapsible>
         </ThemedView>
         {Platform.OS === 'web' && <WebBadge />}
@@ -125,6 +106,7 @@ export default function TabTwoScreen() {
   );
 }
 
+// Le bloc styles doit être en dehors de la fonction
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
