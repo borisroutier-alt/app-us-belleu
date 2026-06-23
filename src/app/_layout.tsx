@@ -1,5 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../../hermes-polyfill.js';
 import { supabase } from '../supabaseClient';
@@ -8,15 +9,15 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
+    // Gestion de l'authentification
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        // Redirection si nécessaire
-      }
+      // Logique session
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        router.replace('/');
+        // En mode hash, le '/' pointe vers le hash root, c'est parfait
+        router.replace('/'); 
       }
     });
 
@@ -25,12 +26,14 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ 
+          headerShown: false,
+          // Ajout important pour le web : éviter les problèmes de liens lors du rafraîchissement
+          animation: Platform.OS === 'web' ? 'none' : 'default' 
+      }}>
         <Stack.Screen name="index" />
-        <Stack.Screen name="news/[id]" options={{ animation: 'slide_from_right' }} />
-        
-        {/* CORRECTION : On cible uniquement le sous-dossier "admin" au lieu de "admin/index" */}
-        <Stack.Screen name="admin" options={{ animation: 'fade_from_bottom' }} />
+        <Stack.Screen name="news/[id]" />
+        <Stack.Screen name="admin" />
       </Stack>
     </SafeAreaProvider>
   );

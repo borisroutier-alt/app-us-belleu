@@ -5,17 +5,12 @@ module.exports = {
     web: {
       bundler: "metro",
       output: "static",
-      // On retire le basePath car le HashRouting rend le site agnostique au chemin
-      basePath: "/", 
+      // Supprimez "basePath" complètement
     },
-    // On force l'utilisation du HashRouter dans le bundle web
+    // On force le routeur en mode "hash"
     extra: {
       router: {
         origin: false,
-        experiments: {
-          // Ceci active la navigation par hash (ex: /#/classement)
-          typedRoutes: true,
-        },
       },
     },
   },
