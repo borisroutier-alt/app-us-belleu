@@ -47,6 +47,11 @@ jobs:
       - name: 🤖 Génération des fichiers natifs Android (Prebuild)
         run: npx expo prebuild --platform android --no-install
 
+      - name: 🤖 Génération des fichiers natifs Android en mode Dev
+        run: |
+          npx expo prebuild --platform android --template expo-template-bare-minimum
+          cp google-services.json android/app/google-services.json
+
       - name: 🚀 Déplacer le fichier de configuration vers Android
         run: cp google-services.json android/app/google-services.json
 
