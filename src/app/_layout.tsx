@@ -1,3 +1,6 @@
+// 🚀 DOIT ÊTRE LA PREMIÈRE LIGNE
+import 'react-native-get-random-values';
+// ... reste de vos imports
 import { Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';

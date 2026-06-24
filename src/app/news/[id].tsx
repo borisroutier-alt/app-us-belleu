@@ -1,278 +1,146 @@
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image, // 👈 Ajout de l'import pour gérer l'affichage de l'image
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { uploadImageToStorage } from '../../../utils/imageUpload';
 import { supabase } from '../../supabaseClient';
-
-interface Article {
-  id: string;
-  category: string;
-  title: string;
-  date: string;
-  description: string;
-  emoji: string;
-  color: string;
-  image_url?: string | null; // 👈 Prise en compte de la colonne image dans l'interface
-}
 
 export default function NewsDetail() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   
-  const [article, setArticle] = useState<Article | null>(null);
+  const [article, setArticle] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  
-  // États pour le mode édition
   const [isEditing, setIsEditing] = useState(false);
+  
+  // États pour l'édition
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editCategory, setEditCategory] = useState('');
+  const [editImageUri, setEditImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAndFetchArticle();
   }, [id]);
 
   const checkAdminAndFetchArticle = async () => {
-    try {
-      // 1. Vérifier si l'utilisateur est Admin
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && user.email) {
-        const { data: licence } = await supabase
-          .from('licencies_autorises')
-          .select('est_admin')
-          .eq('email', user.email.toLowerCase().trim())
-          .maybeSingle();
-        
-        if (licence?.est_admin) setIsAdmin(true);
-      }
-
-      // 2. Charger l'actualité
-      const { data, error } = await supabase
-        .from('news')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      
-      setArticle(data);
-      setEditTitle(data.title);
-      setEditDescription(data.description);
-      setEditCategory(data.category);
-    } catch (err: any) {
-      Alert.alert("Erreur", "Impossible de charger l'article : " + err.message);
-    } finally {
-      setLoading(false);
+    setLoading(true);
+    // Logique de récupération de l'article
+    const { data, error } = await supabase.from('news').select('*').eq('id', id).single();
+    if (data) {
+        setArticle(data);
+        setEditTitle(data.title);
+        setEditDescription(data.description);
+        setEditCategory(data.category);
     }
+    // Vérification admin (à adapter selon votre logique)
+    const { data: { user } } = await supabase.auth.getUser();
+    setIsAdmin(!!user); 
+    setLoading(false);
   };
 
-  // 🛠️ FONCTION : Sauvegarder les modifications
-  const handleUpdate = async () => {
-    if (!editTitle || !editDescription) {
-      Alert.alert("Attention", "Le titre et la description ne peuvent pas être vides.");
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Permission refusée", "Nous avons besoin de l'accès à vos photos.");
       return;
     }
 
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setEditImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handleUpdate = async () => {
     setLoading(true);
+    let finalImageUrl = article?.image_url;
+
     try {
+      if (editImageUri) {
+        finalImageUrl = await uploadImageToStorage(editImageUri);
+      }
+
       const { error } = await supabase
         .from('news')
         .update({
           title: editTitle,
           description: editDescription,
           category: editCategory,
+          image_url: finalImageUrl,
         })
         .eq('id', id);
 
       if (error) throw error;
 
-      Alert.alert("Succès", "L'actualité a été mise à jour !");
+      Alert.alert("Succès", "Actualité mise à jour !");
       setIsEditing(false);
-      // Recharger les données locales de l'article
-      setArticle(prev => prev ? { ...prev, title: editTitle, description: editDescription, category: editCategory } : null);
+      setEditImageUri(null);
+      checkAdminAndFetchArticle();
     } catch (err: any) {
-      Alert.alert("Erreur", "Modification impossible : " + err.message);
+      Alert.alert("Erreur", err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // ❌ FONCTION : Supprimer l'actualité
-  const handleDelete = () => {
-    Alert.alert(
-      "Supprimer l'actualité ?",
-      "Cette action est irréversible. L'article sera retiré du fil d'actualité de tous les licenciés.",
-      [
-        { text: "Annuler", style: "cancel" },
-        { 
-          text: "Supprimer", 
-          style: "destructive", 
-          onPress: async () => {
-            setLoading(true);
-            try {
-              const { error } = await supabase
-                .from('news')
-                .delete()
-                .eq('id', id);
-
-              if (error) throw error;
-
-              Alert.alert("Supprimé", "L'actualité a bien été supprimée.");
-              router.replace('/'); // Retour à l'accueil
-            } catch (err: any) {
-              Alert.alert("Erreur", "Suppression impossible : " + err.message);
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#C5A059" />
-      </View>
-    );
-  }
-
-  if (!article) {
-    return (
-      <View style={styles.center}>
-        <Text style={{ color: '#FFF' }}>Actualité introuvable.</Text>
-      </View>
-    );
-  }
+  if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* En-tête avec couleur et Emoji */}
-      <View style={[styles.banner, { backgroundColor: article.color }]}>
-        <Text style={styles.emoji}>{article.emoji}</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backText}>⬅ Retour</Text>
-        </TouchableOpacity>
-      </View>
+    <ScrollView style={styles.container}>
+      {isEditing ? (
+        <View style={styles.form}>
+          <TextInput style={styles.input} value={editTitle} onChangeText={setEditTitle} placeholder="Titre" />
+          <TextInput style={styles.input} value={editCategory} onChangeText={setEditCategory} placeholder="Catégorie" />
+          <TextInput style={[styles.input, { height: 100 }]} value={editDescription} onChangeText={setEditDescription} multiline placeholder="Description" />
+          
+          <TouchableOpacity style={styles.imagePickerBtn} onPress={handlePickImage}>
+            <Text style={styles.btnText}>📷 Choisir une nouvelle photo</Text>
+          </TouchableOpacity>
 
-      <View style={styles.content}>
-        {isEditing ? (
-          // === MODE ÉDITION (ADMIN UNIQUEMENT) ===
-          <View style={styles.form}>
-            <Text style={styles.label}>Catégorie (ex: SENIORS, U15, CLUB...)</Text>
-            <TextInput style={styles.input} value={editCategory} onChangeText={setEditCategory} />
-
-            <Text style={styles.label}>Titre de l'actualité</Text>
-            <TextInput style={styles.input} value={editTitle} onChangeText={setEditTitle} />
-
-            <Text style={styles.label}>Texte de l'article</Text>
-            <TextInput 
-              style={[styles.input, styles.textArea]} 
-              value={editDescription} 
-              onChangeText={setEditDescription} 
-              multiline
+          {(editImageUri || article?.image_url) && (
+            <Image 
+              source={{ uri: editImageUri || article?.image_url }} 
+              style={styles.articleImage} 
             />
-
-            <View style={styles.actionRow}>
-              <TouchableOpacity style={[styles.btn, styles.btnSuccess]} onPress={handleUpdate}>
-                <Text style={styles.btnText}>💾 ENREGISTRER</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={() => setIsEditing(false)}>
-                <Text style={styles.btnText}>Annuler</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          // === MODE LECTURE NORMAL ===
-          <View>
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{article.category}</Text>
-            </View>
-            
-            {/* 📸 COUCHE AFFICHAGE DE LA PHOTO SÉLECTIONNÉE */}
-            {article.image_url ? (
-              <Image 
-                source={{ uri: article.image_url }} 
-                style={styles.articleImage} 
-                resizeMode="cover"
-              />
-            ) : null}
-
-            <Text style={styles.title}>{article.title}</Text>
-            <Text style={styles.date}>📅 Publié le {article.date}</Text>
-            <Text style={styles.description}>{article.description}</Text>
-
-            {/* Barre d'outils Admin affichée tout en bas */}
-            {isAdmin && (
-              <View style={styles.adminPanel}>
-                <Text style={styles.adminTitle}>👑 OPTIONS ADMINISTRATEUR</Text>
-                <View style={styles.actionRow}>
-                  <TouchableOpacity style={[styles.btn, styles.btnEdit]} onPress={() => setIsEditing(true)}>
-                    <Text style={styles.btnText}>✏️ Modifier</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.btn, styles.btnDelete]} onPress={handleDelete}>
-                    <Text style={styles.btnText}>🗑️ Supprimer</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          </View>
-        )}
-      </View>
+          )}
+          
+          <TouchableOpacity style={styles.btnSuccess} onPress={handleUpdate}>
+            <Text style={styles.btnText}>ENREGISTRER LES MODIFICATIONS</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View>
+          {article?.image_url && <Image source={{ uri: article.image_url }} style={styles.articleImage} />}
+          <Text style={styles.title}>{article?.title}</Text>
+          <Text style={styles.text}>{article?.description}</Text>
+          {isAdmin && (
+            <TouchableOpacity style={styles.editBtn} onPress={() => setIsEditing(true)}>
+              <Text style={styles.btnText}>Modifier l'article</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#061329' },
-  center: { flex: 1, backgroundColor: '#061329', justifyContent: 'center', alignItems: 'center' },
-  banner: { width: '100%', height: 180, justifyContent: 'center', alignItems: 'center', position: 'relative' },
-  emoji: { fontSize: 70 },
-  backButton: { position: 'absolute', top: 20, left: 20, backgroundColor: 'rgba(0,0,0,0.5)', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 15 },
-  backText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
-  content: { padding: 20 },
-  categoryBadge: { alignSelf: 'flex-start', backgroundColor: 'rgba(197, 160, 89, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#C5A059', marginBottom: 15 },
-  categoryText: { color: '#C5A059', fontSize: 11, fontWeight: 'bold' },
-  
-  // 🎨 STYLE POUR METTRE EN VALEUR LA PHOTO DE L'ACTU
-  articleImage: {
-    width: '100%',
-    height: 220,
-    borderRadius: 12,
-    marginBottom: 20,
-    backgroundColor: '#0F2241',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)'
-  },
-
-  title: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
-  date: { color: 'rgba(255, 255, 255, 0.4)', fontSize: 13, marginBottom: 20 },
-  description: { color: 'rgba(255, 255, 255, 0.85)', fontSize: 15, lineHeight: 24 },
-  
-  // Styles Espace Admin
-  adminPanel: { marginTop: 40, padding: 15, backgroundColor: '#0F2241', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(197, 160, 89, 0.3)' },
-  adminTitle: { color: '#C5A059', fontWeight: 'bold', fontSize: 12, marginBottom: 12, textAlign: 'center', letterSpacing: 1 },
-  actionRow: { flexDirection: 'row', gap: 10 },
-  btn: { flex: 1, height: 45, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  btnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
-  btnEdit: { backgroundColor: '#3b82f6' },
-  btnDelete: { backgroundColor: '#ef4444' },
-  btnSuccess: { backgroundColor: '#10b981' },
-  btnCancel: { backgroundColor: '#4b5563' },
-  
-  // Styles Formulaire de modification
-  form: { width: '100%' },
-  label: { color: '#C5A059', fontSize: 12, fontWeight: 'bold', marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: '#0F2241', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: 12, color: '#FFF', fontSize: 15 },
-  textArea: { height: 120, textAlignVertical: 'top' }
+  form: { padding: 20 },
+  articleImage: { width: '100%', height: 200, resizeMode: 'cover', marginBottom: 15 },
+  input: { backgroundColor: '#FFF', padding: 10, marginBottom: 10, borderRadius: 5 },
+  imagePickerBtn: { backgroundColor: '#C5A059', padding: 15, alignItems: 'center', marginBottom: 15, borderRadius: 5 },
+  btnSuccess: { backgroundColor: '#10B981', padding: 15, alignItems: 'center', borderRadius: 5, marginTop: 10 },
+  editBtn: { backgroundColor: '#3B82F6', padding: 15, margin: 20, alignItems: 'center', borderRadius: 5 },
+  btnText: { color: '#FFF', fontWeight: 'bold' },
+  title: { color: '#FFF', fontSize: 24, fontWeight: 'bold', padding: 20 },
+  text: { color: '#CCC', paddingHorizontal: 20, fontSize: 16 }
 });

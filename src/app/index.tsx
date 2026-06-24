@@ -4,7 +4,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  RefreshControl, // 👈 Ajout pour le Pull-to-Refresh
+  RefreshControl,
   StatusBar,
   StyleSheet,
   Text,
@@ -12,6 +12,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { version } from '../../package.json'; // Import de la version
 import { supabase } from '../supabaseClient';
 
 // Importations
@@ -26,18 +27,16 @@ import LogoClub from '../../assets/images/logo_club.png';
 const Index: React.FC = () => {
   const router = useRouter();
   
-  // États de l'application
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false); // 👈 État pour le pull-to-refresh
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPhotoUploading, setIsPhotoUploading] = useState(false);
   const [news, setNews] = useState<Article[]>([]);
 
   usePushNotifications(isLoggedIn);
 
-  // Vérification de la session au démarrage
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setIsLoggedIn(true);
@@ -51,7 +50,6 @@ const Index: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fonction principale de chargement des données
   const fetchDataFromCloud = async (showGlobalLoader = true) => {
     if (showGlobalLoader) setIsFetching(true);
     try {
@@ -78,20 +76,18 @@ const Index: React.FC = () => {
       alert("Erreur de chargement Cloud : " + error.message);
     } finally {
       setIsFetching(false);
-      setIsRefreshing(false); // Arrête l'animation de rafraîchissement
+      setIsRefreshing(false);
     }
   };
 
-  // 🚀 ACTION 1 : Rafraîchir automatiquement dès que l'écran revient au premier plan
   useFocusEffect(
     useCallback(() => {
       if (isLoggedIn) {
-        fetchDataFromCloud(false); // "false" évite le gros rond de chargement au milieu de l'écran
+        fetchDataFromCloud(false);
       }
     }, [isLoggedIn])
   );
 
-  // 🚀 ACTION 2 : Fonction déclenchée par le "Tirer pour rafraîchir"
   const onRefresh = () => {
     setIsRefreshing(true);
     fetchDataFromCloud(false); 
@@ -135,14 +131,19 @@ const Index: React.FC = () => {
   }
 
   if (!isLoggedIn) {
-    return <AuthForm onLoginSuccess={() => setIsLoggedIn(true)} />;
+    return (
+      <View style={styles.container}>
+        <AuthForm onLoginSuccess={() => setIsLoggedIn(true)} />
+        {/* Version affichée discrètement en bas à droite */}
+        <Text style={styles.versionText}>v{version}</Text>
+      </View>
+    );
   }
 
   return (
     <SafeAreaView style={styles.homeContainer} edges={['top']}>
       <StatusBar barStyle="light-content" />
       
-      {/* BARRE D'EN-TÊTE */}
       <View style={styles.headerBar}>
         <Image source={LogoClub} style={styles.headerLogo} resizeMode="contain" />
         <View style={styles.headerTitleContainer}>
@@ -150,7 +151,6 @@ const Index: React.FC = () => {
           <Text style={styles.headerSubtitle}>ESPACE MEMBRE</Text>
         </View>
         
-        {/* Bouton Appareil Photo */}
         <TouchableOpacity 
           style={[styles.headerIconAction, isPhotoUploading && { backgroundColor: 'transparent' }]} 
           onPress={handleSharePhoto}
@@ -168,7 +168,6 @@ const Index: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* FIL D'ACTUALITÉS DIRECT */}
       <View style={{ flex: 1, backgroundColor: '#061329' }}>
         {isFetching ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -182,27 +181,24 @@ const Index: React.FC = () => {
             renderItem={({ item }) => <NewsCard item={item} />} 
             contentContainerStyle={styles.scrollList} 
             showsVerticalScrollIndicator={false}
-            // 🚀 Intégration du système Pull-to-Refresh
             refreshControl={
               <RefreshControl 
                 refreshing={isRefreshing} 
                 onRefresh={onRefresh} 
-                tintColor="#C5A059" // Couleur du loader sur iOS
-                colors={["#C5A059"]} // Couleur du loader sur Android
+                tintColor="#C5A059"
+                colors={["#C5A059"]}
               />
             }
           />
         )}
       </View>
 
-      {/* BARRE DE NAVIGATION MODERNE TOUT EN BAS */}
       <View style={styles.bottomTabBar} key={isAdmin ? 'bar-admin' : 'bar-user'}>
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/classement')}>
           <Text style={styles.tabBarIcon}>🏆</Text>
           <Text style={styles.tabBarLabel}>Classement</Text>
         </TouchableOpacity>
 
-        {/* @ts-ignore */}
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/calendrier')}>
           <Text style={styles.tabBarIcon}>📆</Text>
           <Text style={styles.tabBarLabel}>Calendrier</Text>
@@ -213,7 +209,6 @@ const Index: React.FC = () => {
           <Text style={styles.tabBarLabel}>Galerie</Text>
         </TouchableOpacity>
 
-        {/* @ts-ignore */}
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/sponsors')}>
           <Text style={styles.tabBarIcon}>🤝</Text>
           <Text style={styles.tabBarLabel}>Sponsors</Text>
@@ -238,13 +233,12 @@ const Index: React.FC = () => {
           </TouchableOpacity>
         )}
       </View>
-
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F2241' }, // 👈 Corrigé ici pour correspondre à l'arrière-plan global et éviter le clash de propriété
+  container: { flex: 1, backgroundColor: '#0F2241' },
   homeContainer: { flex: 1, backgroundColor: '#0F2241' },
   headerBar: { 
     flexDirection: 'row', 
@@ -288,6 +282,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     opacity: 0.8
+  },
+  versionText: {
+    position: 'absolute',
+    bottom: 10,
+    right: 15,
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: 12
   }
 });
 
