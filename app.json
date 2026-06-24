@@ -50,9 +50,8 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-secure-store",
-      "@react-native-firebase/app",
-      "@react-native-firebase/messaging"
+      "expo-secure-store"
+
     ],
     "experiments": {
       "typedRoutes": true,
