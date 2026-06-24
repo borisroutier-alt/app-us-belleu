@@ -1,7 +1,9 @@
 name: Build APK Production (Sans Expo Cloud)
+
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:  # Ajouté pour permettre le lancement manuel depuis l'interface GitHub
 
 jobs:
   build:
@@ -33,17 +35,20 @@ jobs:
           chmod -R +x node_modules/expo/bin
         continue-on-error: true
 
-      - name: Create google-services.json from secret
+      - name: 🔑 Créer google-services.json (Temporaire)
         env:
           GOOGLE_SERVICES_JSON_CONTENT: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: echo $GOOGLE_SERVICES_JSON_CONTENT > google-services.json
+        run: echo "$GOOGLE_SERVICES_JSON_CONTENT" > google-services.json
 
       - name: 🧹 Nettoyage du cache Expo CLI
         run: npx expo opt-in-to-eas-cli-demoted-warning --disable-colors || true
         continue-on-error: true
 
-      - name: 🤖 Génération des fichiers natifs Android (Prebuild Final)
+      - name: 🤖 Génération des fichiers natifs Android (Prebuild)
         run: npx expo prebuild --platform android --no-install
+
+      - name: 🚀 Déplacer le fichier de configuration vers Android
+        run: cp google-services.json android/app/google-services.json
 
       - name: 🏗 Compilation de l'APK avec Gradle
         run: |
