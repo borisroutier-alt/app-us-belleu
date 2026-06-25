@@ -1,7 +1,6 @@
 name: Build APK Dev (Sans Expo Cloud)
 on:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,7 +12,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20
-      
+
       - name: ☕ Configuration de Java JDK 17
         uses: actions/setup-java@v3
         with:
@@ -23,19 +22,16 @@ jobs:
       - name: 📦 Installation des dépendances
         run: npm install
 
-      - name: 🤖 Génération des fichiers natifs Android
-        # On fait le prebuild d'abord pour créer le dossier android/
-        run: npx expo prebuild --platform android --clean --template expo-template-bare-minimum
-
-      - name: 🔑 Injection de la configuration Firebase
-        # On utilise cat pour éviter les problèmes de formatage
-        # On s'assure que le fichier est placé DANS le dossier généré
+      - name: 🔑 Création du fichier google-services.json (à la racine)
         run: |
-          cat <<EOF > android/app/google-services.json
+          cat <<EOF > google-services.json
           ${{ secrets.GOOGLE_SERVICES_JSON }}
           EOF
           echo "Vérification de la présence du fichier :"
-          ls -l android/app/google-services.json
+          ls -l google-services.json
+
+      - name: 🤖 Génération des fichiers natifs Android
+        run: npx expo prebuild --platform android --clean --template expo-template-bare-minimum
 
       - name: 🏗 Compilation de l'APK de Debug (Dev)
         run: |

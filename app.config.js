@@ -18,7 +18,7 @@ module.exports = {
       },
       predictiveBackGestureEnabled: false,
       package: "com.usbelleu.usbelleuapp",
-      googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json"
+      googleServicesFile: "./google-services.json"
     },
     web: {
       bundler: "metro",
