@@ -44,21 +44,37 @@ export default function AdminDashboard() {
     }
   };
 
-  const handlePublishActu = async () => {
-    if (!actuTitle || !actuDescription || !selectedImageUri) return Alert.alert("Erreur", "Tous les champs sont requis");
-    setLoadingActu(true);
-    try {
-      let finalImageUrl = isExistingImage ? selectedImageUri : (await uploadImageToStorage(selectedImageUri!) || "");
-      await supabase.from('news').insert([{ 
-        title: actuTitle, 
-        description: actuDescription, 
-        image_url: finalImageUrl,
-        categorie: actuCategorie 
-      }]);
-      Alert.alert("Succès", "Actualité publiée");
-      setActuTitle(''); setActuCategorie(''); setActuDescription(''); setSelectedImageUri(null);
-    } catch (e: any) { Alert.alert("Erreur", e.message); } finally { setLoadingActu(false); }
-  };
+const handlePublishActu = async () => {
+  if (!actuTitle || !actuDescription || !selectedImageUri) 
+    return Alert.alert("Erreur", "Tous les champs sont requis");
+  
+  setLoadingActu(true);
+  try {
+    let finalImageUrl = isExistingImage ? selectedImageUri : (await uploadImageToStorage(selectedImageUri!) || "");
+    
+    // Modification ici : on capture la réponse
+    const { data, error } = await supabase.from('news').insert([{ 
+      title: actuTitle, 
+      description: actuDescription, 
+      image_url: finalImageUrl,
+      category: actuCategorie,
+      date: new Date().toISOString(),
+      color: '#C5A059'
+    }]);
+
+    if (error) {
+      console.error("Erreur Supabase :", error); // Regardez votre console expo/terminal
+      throw new Error(error.message);
+    }
+
+    Alert.alert("Succès", "Actualité publiée");
+    setActuTitle(''); setActuCategorie(''); setActuDescription(''); setSelectedImageUri(null);
+  } catch (e: any) { 
+    Alert.alert("Erreur", e.message); 
+  } finally { 
+    setLoadingActu(false); 
+  }
+};
 
   if (!isMounted) return <ActivityIndicator size="large" />;
 
