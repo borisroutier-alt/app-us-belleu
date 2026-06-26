@@ -65,7 +65,7 @@ export default function NewsDetail() {
           description: editDescription,
           categorie: editCategory,
           image_url: finalImageUrl,
-        }).eq('id', id);
+      }).eq('id', id);
 
       if (error) throw error;
       Alert.alert("Succès", "Actualité mise à jour !");
@@ -88,6 +88,11 @@ export default function NewsDetail() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Bouton retour fixe */}
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <Text style={styles.backButtonText}>⬅ Retour</Text>
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {isEditing ? (
           <View style={styles.card}>
@@ -149,6 +154,8 @@ export default function NewsDetail() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#061329' },
+  backButton: { padding: 20, paddingBottom: 0 },
+  backButtonText: { color: '#C5A059', fontWeight: 'bold', fontSize: 16 },
   scrollContent: { paddingBottom: 40 },
   card: { backgroundColor: '#0F2241', margin: 15, padding: 20, borderRadius: 16 },
   headerTitle: { color: '#C5A059', fontSize: 20, fontWeight: 'bold', marginBottom: 15 },
