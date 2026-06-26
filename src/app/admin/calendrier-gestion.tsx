@@ -1,9 +1,10 @@
-import { useLocalSearchParams, useRouter } from 'expo-router'; // 👈 Vérifie bien l'import de useLocalSearchParams
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     ScrollView,
     StyleSheet,
@@ -13,7 +14,14 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Calendar } from 'react-native-calendars';
 import { supabase } from '../../supabaseClient';
+
+// Import conditionnel : DateTimePicker n'est pas utilisé sur le web
+let DateTimePicker: any = null;
+if (Platform.OS !== 'web') {
+  DateTimePicker = require('@react-native-community/datetimepicker').default;
+}
 
 // Fonction d'envoi des notifications push via Expo
 const sendPushNotificationToAll = async (eventTitle: string, eventDate: string, isModification = false) => {
@@ -53,15 +61,42 @@ const sendPushNotificationToAll = async (eventTitle: string, eventDate: string, 
   }
 };
 
+// Composant input heure pour le web (input HTML natif)
+const TimeInputWeb: React.FC<{ value: Date; onChange: (date: Date) => void }> = ({ value, onChange }) => {
+  const heureStr = `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
+
+  return (
+    <input
+      type="time"
+      value={heureStr}
+      onChange={(e) => {
+        const [h, m] = e.target.value.split(':').map(Number);
+        const newDate = new Date(value);
+        newDate.setHours(h);
+        newDate.setMinutes(m);
+        onChange(newDate);
+      }}
+      style={{
+        backgroundColor: '#0F2241',
+        color: '#FFFFFF',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 8,
+        padding: 14,
+        fontSize: 16,
+        fontWeight: 'bold',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    />
+  );
+};
+
 const CalendrierGestion: React.FC = () => {
   const router = useRouter();
-  
-  // 🚀 RÉCUPÉRATION DES PARAMÈTRES ENVOYÉS PAR LE BOUTON
   const params = useLocalSearchParams();
-  const idEvenement = params.id as string; 
-  const isEditing = !!idEvenement; // Devient 'true' si un ID existe, donc mode édition
+  const idEvenement = params.id as string;
+  const isEditing = !!idEvenement;
 
-  // ÉTATS DES CHAMPS
   const [titre, setTitre] = useState('');
   const [description, setDescription] = useState('');
   const [lieu, setLieu] = useState('');
@@ -69,57 +104,53 @@ const CalendrierGestion: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [typeEvenement, setTypeEvenement] = useState<'match' | 'autre'>('autre');
 
-  // ÉTATS DES SÉLECTEURS DE DATE & HEURE
-  const [selectedJourNum, setSelectedJourNum] = useState('05');
-  const [selectedMoisNum, setSelectedMoisNum] = useState('06'); 
-  const [selectedAnnee, setSelectedAnnee] = useState('2026');
-  const [selectedHeure, setSelectedHeure] = useState('15');
-  const [selectedMinute, setSelectedMinute] = useState('00');
+  const [selectedDate, setSelectedDate] = useState('2026-06-05');
+  const [showCalendar, setShowCalendar] = useState(false);
 
-  const joursNumeros = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
-  const moisNumeros = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
-  const anneesListe = ['2026', '2027'];
-  const heuresListe = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-  const minutesListe = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+  const [selectedTime, setSelectedTime] = useState(new Date(2026, 5, 5, 15, 0));
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // 🚀 EFFET INDISPONSABLE : Remplit les champs dès que les paramètres "params" arrivent
   useEffect(() => {
     if (isEditing) {
       if (params.titre) setTitre(params.titre as string);
       if (params.description) setDescription(params.description as string);
       if (params.lieu) setLieu(params.lieu as string);
       if (params.type) setTypeEvenement(params.type as 'match' | 'autre');
-      
+
       if (params.date_evenement) {
         try {
-          // Exemple de date reçue de Supabase : "2026-06-05T15:00:00.000Z"
           const d = new Date(params.date_evenement as string);
-          setSelectedAnnee(String(d.getFullYear()));
-          setSelectedMoisNum(String(d.getMonth() + 1).padStart(2, '0'));
-          setSelectedJourNum(String(d.getDate()).padStart(2, '0'));
-          setSelectedHeure(String(d.getHours()).padStart(2, '0'));
-          
-          const min = d.getMinutes();
-          const minFormatee = String(Math.round(min / 5) * 5).padStart(2, '0');
-          if (minutesListe.includes(minFormatee)) {
-            setSelectedMinute(minFormatee);
-          }
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          setSelectedDate(`${yyyy}-${mm}-${dd}`);
+          setSelectedTime(d);
         } catch (e) {
           console.log("Erreur de décodage de la date :", e);
         }
       }
     }
-  }, [idEvenement, params]); // Se redéclenche si l'ID ou les paramètres changent
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idEvenement]);
 
-  const faireDefiler = (actuel: string, liste: string[], direction: number, setFonction: (val: string) => void) => {
-    const indexActuel = liste.indexOf(actuel);
-    let nouvelIndex = indexActuel + direction;
-    if (nouvelIndex >= liste.length) nouvelIndex = 0;
-    if (nouvelIndex < 0) nouvelIndex = liste.length - 1;
-    setFonction(liste[nouvelIndex]);
+  const formatDateAffichage = (dateStr: string) => {
+    const [annee, mois, jour] = dateStr.split('-');
+    return `${jour}/${mois}/${annee}`;
   };
 
-  // Enregistrer (Mise à jour si isEditing, sinon Insertion)
+  const formatHeureAffichage = (date: Date) => {
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    return `${h}h${m}`;
+  };
+
+  const onChangeTime = (event: any, date?: Date) => {
+    setShowTimePicker(Platform.OS === 'ios');
+    if (date) {
+      setSelectedTime(date);
+    }
+  };
+
   const handleSaveEvenement = async () => {
     if (!titre || !lieu) {
       Alert.alert("Champs manquants", "Veuillez remplir au moins le titre et le lieu.");
@@ -129,9 +160,14 @@ const CalendrierGestion: React.FC = () => {
     setIsSaving(true);
 
     try {
-      const dateFormatee = `${selectedAnnee}-${selectedMoisNum}-${selectedJourNum}`;
-      const heureFormatee = `${selectedHeure}:${selectedMinute}`;
-      const timestampEvenement = new Date(`${dateFormatee}T${heureFormatee}:00`).toISOString();
+      const [annee, mois, jour] = selectedDate.split('-').map(Number);
+      const timestampEvenement = new Date(
+        annee,
+        mois - 1,
+        jour,
+        selectedTime.getHours(),
+        selectedTime.getMinutes()
+      ).toISOString();
 
       const eventData = {
         titre: titre.trim(),
@@ -142,7 +178,6 @@ const CalendrierGestion: React.FC = () => {
       };
 
       if (isEditing) {
-        // 🔧 MODE MODIFICATION
         const { error } = await supabase
           .from('calendrier')
           .update(eventData)
@@ -151,7 +186,6 @@ const CalendrierGestion: React.FC = () => {
         if (error) throw error;
         Alert.alert("Succès", "L'événement a bien été modifié !");
       } else {
-        // 📅 MODE AJOUT
         const { error } = await supabase
           .from('calendrier')
           .insert([eventData]);
@@ -160,7 +194,7 @@ const CalendrierGestion: React.FC = () => {
         Alert.alert("Succès", "L'événement a bien été ajouté !");
       }
 
-      const dateLisible = `${selectedJourNum}/${selectedMoisNum}/${selectedAnnee} à ${selectedHeure}h${selectedMinute}`;
+      const dateLisible = `${formatDateAffichage(selectedDate)} à ${formatHeureAffichage(selectedTime)}`;
       sendPushNotificationToAll(titre.trim(), dateLisible, isEditing);
 
       router.back();
@@ -171,7 +205,6 @@ const CalendrierGestion: React.FC = () => {
     }
   };
 
-  // Fonction de Suppression
   const handleDeleteEvenement = () => {
     Alert.alert(
       "Supprimer l'événement",
@@ -214,17 +247,17 @@ const CalendrierGestion: React.FC = () => {
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.form} showsVerticalScrollIndicator={false}>
-          
+
           <Text style={styles.label}>Type d'événement :</Text>
           <View style={styles.toggleRow}>
-            <TouchableOpacity 
-              style={[styles.toggleButton, typeEvenement === 'match' && styles.toggleButtonMatchActive]} 
+            <TouchableOpacity
+              style={[styles.toggleButton, typeEvenement === 'match' && styles.toggleButtonMatchActive]}
               onPress={() => setTypeEvenement('match')}
             >
               <Text style={[styles.toggleButtonText, typeEvenement === 'match' && styles.toggleButtonTextActive]}>⚽ MATCH / SPORTIF</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.toggleButton, typeEvenement === 'autre' && styles.toggleButtonAutreActive]} 
+            <TouchableOpacity
+              style={[styles.toggleButton, typeEvenement === 'autre' && styles.toggleButtonAutreActive]}
               onPress={() => setTypeEvenement('autre')}
             >
               <Text style={[styles.toggleButtonText, typeEvenement === 'autre' && styles.toggleButtonTextActive]}>📆 AUTRE ÉVÉNEMENT</Text>
@@ -241,42 +274,18 @@ const CalendrierGestion: React.FC = () => {
           />
 
           <Text style={styles.label}>Date de l'événement :</Text>
-          <View style={styles.selectorContainer}>
-            <View style={styles.pickerColumn}>
-              <TouchableOpacity onPress={() => faireDefiler(selectedJourNum, joursNumeros, -1, setSelectedJourNum)} style={styles.arrowBtn}><Text style={styles.arrowText}>▲</Text></TouchableOpacity>
-              <Text style={styles.pickerValue}>{selectedJourNum} j</Text>
-              <TouchableOpacity onPress={() => faireDefiler(selectedJourNum, joursNumeros, 1, setSelectedJourNum)} style={styles.arrowBtn}><Text style={styles.arrowText}>▼</Text></TouchableOpacity>
-            </View>
-            <View style={{ justifyContent: 'center' }}><Text style={styles.separatorSlash}>/</Text></View>
-            <View style={styles.pickerColumn}>
-              <TouchableOpacity onPress={() => faireDefiler(selectedMoisNum, moisNumeros, -1, setSelectedMoisNum)} style={styles.arrowBtn}><Text style={styles.arrowText}>▲</Text></TouchableOpacity>
-              <Text style={styles.pickerValue}>{selectedMoisNum} m</Text>
-              <TouchableOpacity onPress={() => faireDefiler(selectedMoisNum, moisNumeros, 1, setSelectedMoisNum)} style={styles.arrowBtn}><Text style={styles.arrowText}>▼</Text></TouchableOpacity>
-            </View>
-            <View style={{ justifyContent: 'center' }}><Text style={styles.separatorSlash}>/</Text></View>
-            <View style={styles.pickerColumn}>
-              <TouchableOpacity onPress={() => faireDefiler(selectedAnnee, anneesListe, -1, setSelectedAnnee)} style={styles.arrowBtn}><Text style={styles.arrowText}>▲</Text></TouchableOpacity>
-              <Text style={styles.pickerValue}>{selectedAnnee}</Text>
-              <TouchableOpacity onPress={() => faireDefiler(selectedAnnee, anneesListe, 1, setSelectedAnnee)} style={styles.arrowBtn}><Text style={styles.arrowText}>▼</Text></TouchableOpacity>
-            </View>
-          </View>
+          <TouchableOpacity style={styles.dateButton} onPress={() => setShowCalendar(true)}>
+            <Text style={styles.dateButtonText}>📅 {formatDateAffichage(selectedDate)}</Text>
+          </TouchableOpacity>
 
           <Text style={styles.label}>Heure du rendez-vous :</Text>
-          <View style={[styles.selectorContainer, { maxWidth: 200 }]}>
-            <View style={styles.pickerColumn}>
-              <TouchableOpacity onPress={() => faireDefiler(selectedHeure, heuresListe, -1, setSelectedHeure)} style={styles.arrowBtn}><Text style={styles.arrowText}>▲</Text></TouchableOpacity>
-              <Text style={styles.pickerValue}>{selectedHeure} h</Text>
-              <TouchableOpacity onPress={() => faireDefiler(selectedHeure, heuresListe, 1, setSelectedHeure)} style={styles.arrowBtn}><Text style={styles.arrowText}>▼</Text></TouchableOpacity>
-            </View>
-            <View style={{ justifyContent: 'center', paddingHorizontal: 5 }}>
-              <Text style={{ color: '#C5A059', fontWeight: 'bold', fontSize: 16 }}>:</Text>
-            </View>
-            <View style={styles.pickerColumn}>
-              <TouchableOpacity onPress={() => faireDefiler(selectedMinute, minutesListe, -1, setSelectedMinute)} style={styles.arrowBtn}><Text style={styles.arrowText}>▲</Text></TouchableOpacity>
-              <Text style={styles.pickerValue}>{selectedMinute}</Text>
-              <TouchableOpacity onPress={() => faireDefiler(selectedMinute, minutesListe, 1, setSelectedMinute)} style={styles.arrowBtn}><Text style={styles.arrowText}>▼</Text></TouchableOpacity>
-            </View>
-          </View>
+          {Platform.OS === 'web' ? (
+            <TimeInputWeb value={selectedTime} onChange={setSelectedTime} />
+          ) : (
+            <TouchableOpacity style={styles.dateButton} onPress={() => setShowTimePicker(true)}>
+              <Text style={styles.dateButtonText}>🕐 {formatHeureAffichage(selectedTime)}</Text>
+            </TouchableOpacity>
+          )}
 
           <Text style={styles.label}>Lieu *</Text>
           <TextInput
@@ -298,12 +307,10 @@ const CalendrierGestion: React.FC = () => {
             numberOfLines={4}
           />
 
-          {/* Le bouton principal s'adapte dynamiquement */}
           <TouchableOpacity style={styles.submitButton} onPress={handleSaveEvenement} disabled={isSaving || isDeleting}>
             {isSaving ? <ActivityIndicator color="#0F2241" /> : <Text style={styles.submitButtonText}>{isEditing ? "ENREGISTRER LES MODIFICATIONS" : "PUBLIER L'ÉVÉNEMENT"}</Text>}
           </TouchableOpacity>
 
-          {/* Le bouton rouge de suppression s'affiche uniquement si isEditing est vrai */}
           {isEditing && (
             <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteEvenement} disabled={isSaving || isDeleting}>
               {isDeleting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.deleteButtonText}>SUPPRIMER L'ÉVÉNEMENT</Text>}
@@ -311,6 +318,71 @@ const CalendrierGestion: React.FC = () => {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Modal Calendrier (date) */}
+      <Modal visible={showCalendar} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Calendar
+              current={selectedDate}
+              onDayPress={(day) => {
+                setSelectedDate(day.dateString);
+                setShowCalendar(false);
+              }}
+              markedDates={{
+                [selectedDate]: { selected: true, selectedColor: '#C5A059' },
+              }}
+              theme={{
+                backgroundColor: '#0F2241',
+                calendarBackground: '#0F2241',
+                textSectionTitleColor: '#C5A059',
+                dayTextColor: '#FFFFFF',
+                todayTextColor: '#C5A059',
+                selectedDayBackgroundColor: '#C5A059',
+                selectedDayTextColor: '#0F2241',
+                monthTextColor: '#FFFFFF',
+                arrowColor: '#C5A059',
+                textDisabledColor: 'rgba(255,255,255,0.2)',
+              }}
+            />
+            <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowCalendar(false)}>
+              <Text style={styles.closeModalText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Picker natif d'heure (Android: dialog système) */}
+      {showTimePicker && Platform.OS === 'android' && DateTimePicker && (
+        <DateTimePicker
+          value={selectedTime}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={onChangeTime}
+        />
+      )}
+
+      {/* Picker natif d'heure (iOS: roue inline en modal) */}
+      {showTimePicker && Platform.OS === 'ios' && DateTimePicker && (
+        <Modal visible={showTimePicker} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <DateTimePicker
+                value={selectedTime}
+                mode="time"
+                is24Hour={true}
+                display="spinner"
+                onChange={onChangeTime}
+                textColor="#FFFFFF"
+              />
+              <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowTimePicker(false)}>
+                <Text style={styles.closeModalText}>Valider</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -331,16 +403,16 @@ const styles = StyleSheet.create({
   toggleButtonAutreActive: { backgroundColor: '#C5A059', borderColor: '#C5A059' },
   toggleButtonText: { color: 'rgba(255,255,255,0.6)', fontWeight: 'bold', fontSize: 12 },
   toggleButtonTextActive: { color: '#FFFFFF' },
-  selectorContainer: { flexDirection: 'row', backgroundColor: '#0F2241', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', padding: 8, marginBottom: 5 },
-  pickerColumn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  arrowBtn: { paddingVertical: 2, width: '100%', alignItems: 'center' },
-  arrowText: { color: '#C5A059', fontSize: 11 },
-  pickerValue: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', marginVertical: 1 },
-  separatorSlash: { color: 'rgba(255,255,255,0.2)', fontSize: 16, fontWeight: 'bold', paddingHorizontal: 5 },
+  dateButton: { backgroundColor: '#0F2241', padding: 14, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center' },
+  dateButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
   submitButton: { backgroundColor: '#C5A059', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 30 },
   submitButtonText: { color: '#0F2241', fontWeight: 'bold', fontSize: 15, letterSpacing: 1 },
   deleteButton: { backgroundColor: '#EF4444', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 15 },
-  deleteButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 15, letterSpacing: 1 }
+  deleteButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 15, letterSpacing: 1 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#0F2241', borderRadius: 12, padding: 10, width: '90%', maxWidth: 400 },
+  closeModalButton: { marginTop: 10, padding: 12, alignItems: 'center' },
+  closeModalText: { color: '#C5A059', fontWeight: 'bold' },
 });
 
 export default CalendrierGestion;
