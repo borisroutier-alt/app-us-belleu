@@ -208,9 +208,9 @@ const Index: React.FC = () => {
 
       <View style={styles.bottomTabBar} key={isAdmin ? 'bar-admin' : 'bar-user'}>
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/resultats/resultats')}>
-  <Text style={styles.tabBarIcon}>⚽</Text>
-  <Text style={styles.tabBarLabel}>Résultats</Text>
-</TouchableOpacity>
+          <Text style={styles.tabBarIcon}>⚽</Text>
+          <Text style={styles.tabBarLabel}>Résultats</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/calendrier')}>
           <Text style={styles.tabBarIcon}>📆</Text>
@@ -220,6 +220,12 @@ const Index: React.FC = () => {
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/galerie')}>
           <Text style={styles.tabBarIcon}>🖼️</Text>
           <Text style={styles.tabBarLabel}>Galerie</Text>
+        </TouchableOpacity>
+
+        {/* NOUVEL ONGLET EFFECTIFS */}
+        <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/effectifs/Seniors' as any)}>
+          <Text style={styles.tabBarIcon}>🏃‍♂️</Text>
+          <Text style={styles.tabBarLabel}>Effectifs</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/sponsors')}>

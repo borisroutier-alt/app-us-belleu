@@ -11,6 +11,7 @@
     "assert": "^2.1.0",
     "base64-arraybuffer": "^1.0.2",
     "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
     "empty-module": "^0.0.2",
     "expo": "~56.0.3",
     "expo-build-properties": "~56.0.19",

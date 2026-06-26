@@ -7,6 +7,8 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Buffer } from 'buffer';
 import { supabase } from '../../supabaseClient';
 
 export default function AjoutJoueur() {
@@ -14,7 +16,11 @@ export default function AjoutJoueur() {
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const [categorie, setCategorie] = useState('Seniors');
+  
+  // États pour le poste
   const [poste, setPoste] = useState('Gardien');
+  const [posteAutre, setPosteAutre] = useState('');
+  
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +38,9 @@ export default function AjoutJoueur() {
   };
 
   const uploadAndSave = async () => {
-    if (!nom || !prenom || !image) {
+    const posteFinal = poste === 'Autre' ? posteAutre : poste;
+
+    if (!nom || !prenom || !image || (poste === 'Autre' && !posteAutre)) {
       Alert.alert("Erreur", "Veuillez remplir tous les champs et ajouter une photo.");
       return;
     }
@@ -40,25 +48,33 @@ export default function AjoutJoueur() {
     setLoading(true);
 
     try {
-      const response = await fetch(image);
-      const blob = await response.blob();
+      // 1. Lecture du fichier en Base64
+      const base64 = await FileSystem.readAsStringAsync(image, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
       const fileName = `${Date.now()}_${nom.toLowerCase()}.jpg`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      // 2. Upload vers Supabase (converti en Buffer)
+      const { error: uploadError } = await supabase.storage
         .from('photos_joueurs')
-        .upload(fileName, blob);
+        .upload(fileName, Buffer.from(base64, 'base64'), {
+          contentType: 'image/jpeg',
+        });
 
       if (uploadError) throw uploadError;
 
+      // 3. Récupération de l'URL publique
       const { data: { publicUrl } } = supabase.storage
         .from('photos_joueurs')
         .getPublicUrl(fileName);
 
+      // 4. Insertion en base de données
       const { error: dbError } = await supabase.from('joueurs').insert([{
         nom: nom.trim(),
         prenom: prenom.trim(),
         categorie,
-        poste,
+        poste: posteFinal,
         photo_url: publicUrl
       }]);
 
@@ -67,7 +83,8 @@ export default function AjoutJoueur() {
       Alert.alert("Succès", "Joueur ajouté avec succès !");
       router.back();
     } catch (err: any) {
-      Alert.alert("Erreur", err.message);
+      console.error(err);
+      Alert.alert("Erreur", "Impossible d'ajouter le joueur : " + err.message);
     } finally {
       setLoading(false);
     }
@@ -92,18 +109,33 @@ export default function AjoutJoueur() {
         <Text style={styles.label}>Catégorie</Text>
         <View style={styles.pickerContainer}>
           <Picker selectedValue={categorie} onValueChange={(itemValue) => setCategorie(itemValue)} style={styles.picker} dropdownIconColor="#C5A059">
-            <Picker.Item label="Seniors" value="Seniors" />
-            <Picker.Item label="U17" value="U17" />
-            <Picker.Item label="U15" value="U15" />
-            <Picker.Item label="U13" value="U13" />
-            <Picker.Item label="U11" value="U11" />
-            <Picker.Item label="U9" value="U9" />
-            <Picker.Item label="Dirigeants" value="Dirigeants" />
+            {['Seniors', 'U18', 'U17', 'U15', 'U13', 'U11', 'U9', 'Dirigeants'].map(cat => (
+                <Picker.Item key={cat} label={cat} value={cat} />
+            ))}
           </Picker>
         </View>
 
         <Text style={styles.label}>Poste</Text>
-        <TextInput style={styles.input} placeholder="Poste (ex: Gardien)" value={poste} onChangeText={setPoste} placeholderTextColor="#888" />
+        <View style={styles.pickerContainer}>
+          <Picker selectedValue={poste} onValueChange={(itemValue) => setPoste(itemValue)} style={styles.picker} dropdownIconColor="#C5A059">
+            <Picker.Item label="Gardien" value="Gardien" />
+            <Picker.Item label="Défenseur" value="Défenseur" />
+            <Picker.Item label="Milieu" value="Milieu" />
+            <Picker.Item label="Attaquant" value="Attaquant" />
+            <Picker.Item label="Entraineur" value="Entraineur" />
+            <Picker.Item label="Autre" value="Autre" />
+          </Picker>
+        </View>
+
+        {poste === 'Autre' && (
+          <TextInput 
+            style={styles.input} 
+            placeholder="Précisez le poste..." 
+            value={posteAutre} 
+            onChangeText={setPosteAutre} 
+            placeholderTextColor="#888" 
+          />
+        )}
 
         <TouchableOpacity style={styles.button} onPress={uploadAndSave} disabled={loading}>
           {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>VALIDER L'AJOUT</Text>}
