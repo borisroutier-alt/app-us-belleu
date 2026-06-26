@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { FlatList, View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, RefreshControl, Platform } from 'react-native';
 import { supabase } from '../../supabaseClient';
 
 // Définition de la structure d'un joueur
@@ -22,7 +21,6 @@ export default function ListeJoueurs() {
   const [joueurs, setJoueurs] = useState<Joueur[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Utilisation de useFocusEffect pour rafraîchir la liste à chaque retour sur l'écran
   useFocusEffect(
     useCallback(() => {
       if (categorie) {
@@ -41,7 +39,6 @@ export default function ListeJoueurs() {
     if (error) {
       console.error("Erreur chargement joueurs:", error);
     } else {
-      // Ordre de priorité personnalisé
       const ordrePostes: { [key: string]: number } = {
         'Entraineur': 1,
         'Gardien': 2,
@@ -50,7 +47,6 @@ export default function ListeJoueurs() {
         'Attaquant': 5
       };
 
-      // Tri des joueurs selon l'ordre défini
       const joueursTries = (data || []).sort((a, b) => {
         const poidsA = ordrePostes[a.poste] || 99;
         const poidsB = ordrePostes[b.poste] || 99;
@@ -63,7 +59,9 @@ export default function ListeJoueurs() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    // Utilisation d'une View simple pour éviter les problèmes de SafeArea sur le Web
+    <View style={[styles.container, { paddingTop: Platform.OS === 'web' ? 20 : 0 }]}>
+      
       {/* Header personnalisé */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -72,23 +70,25 @@ export default function ListeJoueurs() {
         <Text style={styles.title}>Effectif</Text>
       </View>
 
-      {/* Barre de navigation horizontale des catégories */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
-        style={styles.tabScroll}
-        contentContainerStyle={{ paddingRight: 20 }}
-      >
-        {CATEGORIES.map((cat) => (
-          <TouchableOpacity 
-            key={cat} 
-            style={[styles.tab, categorie === cat && styles.activeTab]} 
-            onPress={() => router.replace(`/effectifs/${cat}` as any)}
-          >
-            <Text style={[styles.tabText, categorie === cat && styles.activeTabText]}>{cat}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* Conteneur pour la barre de navigation pour éviter la coupure Web */}
+      <View style={styles.tabWrapper}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.tabScroll}
+          contentContainerStyle={styles.tabContainer}
+        >
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity 
+              key={cat} 
+              style={[styles.tab, categorie === cat && styles.activeTab]} 
+              onPress={() => router.replace(`/effectifs/${cat}` as any)}
+            >
+              <Text style={[styles.tabText, categorie === cat && styles.activeTabText]}>{cat}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Liste des joueurs */}
       {loading ? (
@@ -121,7 +121,7 @@ export default function ListeJoueurs() {
           ListEmptyComponent={<Text style={styles.emptyText}>Aucun joueur trouvé pour cette catégorie.</Text>}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -130,12 +130,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', padding: 20 },
   backBtn: { color: '#C5A059', fontWeight: 'bold', marginRight: 15 },
   title: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
-  tabScroll: { 
-    flexGrow: 0, 
-    paddingHorizontal: 20, 
-    marginBottom: 10, 
-    height: 50 
-  },
+  tabWrapper: { width: '100%', overflow: 'visible', marginBottom: 10 },
+  tabScroll: { flexGrow: 0, height: 50 },
+  tabContainer: { paddingHorizontal: 20, paddingRight: 40 },
   tab: { 
     paddingVertical: 8, 
     paddingHorizontal: 20, 
@@ -150,19 +147,18 @@ const styles = StyleSheet.create({
   activeTabText: { fontWeight: 'bold', color: '#0F2241' },
   listPadding: { padding: 10 },
   card: {
-  flex: 1,
-  margin: 8,
-  backgroundColor: '#0F2241',
-  borderRadius: 16, // Coins un peu plus arrondis pour un look plus moderne
-  alignItems: 'center',
-  padding: 12,
-  // Ombre légère pour donner du relief (si sur iOS)
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.2,
-  shadowRadius: 4,
-  elevation: 5, // Pour Android
-},
+    flex: 1,
+    margin: 8,
+    backgroundColor: '#0F2241',
+    borderRadius: 16,
+    alignItems: 'center',
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
   photo: { width: 140, height: 160, borderRadius: 8, marginBottom: 10, backgroundColor: '#0F2241' },
   info: { alignItems: 'center' },
   prenom: { color: '#FFF', fontSize: 12 },
