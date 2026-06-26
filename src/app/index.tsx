@@ -145,28 +145,41 @@ const Index: React.FC = () => {
       <StatusBar barStyle="light-content" />
       
       <View style={styles.headerBar}>
-        <Image source={LogoClub} style={styles.headerLogo} resizeMode="contain" />
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>U.S. BELLEU</Text>
-          <Text style={styles.headerSubtitle}>ESPACE MEMBRE</Text>
-        </View>
-        
-        <TouchableOpacity 
-          style={[styles.headerIconAction, isPhotoUploading && { backgroundColor: 'transparent' }]} 
-          onPress={handleSharePhoto}
-          disabled={isPhotoUploading}
-        >
-          {isPhotoUploading ? (
-            <ActivityIndicator color="#C5A059" size="small" />
-          ) : (
-            <Text style={{ fontSize: 18 }}>📸</Text>
-          )}
-        </TouchableOpacity>
+  <Image source={LogoClub} style={styles.headerLogo} resizeMode="contain" />
+  
+  <View style={styles.headerTitleContainer}>
+    <Text style={styles.headerTitle}>U.S. BELLEU</Text>
+    <Text style={styles.headerSubtitle}>ESPACE MEMBRE</Text>
+  </View>
 
-        <TouchableOpacity style={styles.miniLogout} onPress={handleLogout}>
-          <Text style={styles.miniLogoutText}>Quitter</Text>
-        </TouchableOpacity>
-      </View>
+  {/* NOUVEAU BOUTON MESSAGERIE (Admin uniquement) */}
+  {isAdmin && (
+    <TouchableOpacity 
+      style={styles.headerIconAction} 
+      onPress={() => router.push('/admin/messages')}
+    >
+      <Text style={{ fontSize: 16 }}>📥</Text>
+    </TouchableOpacity>
+  )}
+  
+  {/* Bouton photo existant */}
+  <TouchableOpacity 
+    style={[styles.headerIconAction, isPhotoUploading && { backgroundColor: 'transparent' }]} 
+    onPress={handleSharePhoto}
+    disabled={isPhotoUploading}
+  >
+    {isPhotoUploading ? (
+      <ActivityIndicator color="#C5A059" size="small" />
+    ) : (
+      <Text style={{ fontSize: 18 }}>📸</Text>
+    )}
+  </TouchableOpacity>
+
+  {/* Bouton Quitter */}
+  <TouchableOpacity style={styles.miniLogout} onPress={handleLogout}>
+    <Text style={styles.miniLogoutText}>Quitter</Text>
+  </TouchableOpacity>
+</View>
 
       <View style={{ flex: 1, backgroundColor: '#061329' }}>
         {isFetching ? (
@@ -194,10 +207,10 @@ const Index: React.FC = () => {
       </View>
 
       <View style={styles.bottomTabBar} key={isAdmin ? 'bar-admin' : 'bar-user'}>
-        <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/classement')}>
-          <Text style={styles.tabBarIcon}>🏆</Text>
-          <Text style={styles.tabBarLabel}>Classement</Text>
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/resultats/resultats')}>
+  <Text style={styles.tabBarIcon}>⚽</Text>
+  <Text style={styles.tabBarLabel}>Résultats</Text>
+</TouchableOpacity>
 
         <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/calendrier')}>
           <Text style={styles.tabBarIcon}>📆</Text>
@@ -218,14 +231,7 @@ const Index: React.FC = () => {
           <Text style={styles.tabBarIcon}>📞</Text>
           <Text style={styles.tabBarLabel}>Contact</Text>
         </TouchableOpacity>
-
-        {isAdmin && (
-          <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/admin/messages')}>
-            <Text style={styles.tabBarIcon}>📥</Text>
-            <Text style={styles.tabBarLabel}>Secrétariat</Text>
-          </TouchableOpacity>
-        )}
-        
+      
         {isAdmin && (
           <TouchableOpacity style={styles.tabBarItem} onPress={() => router.push('/admin')}>
             <Text style={styles.tabBarIcon}>👑</Text>

@@ -39,7 +39,7 @@ module.exports = {
     },
     experiments: {
       typedRoutes: true,
-      reactCompiler: true
+      reactCompiler: false
     },
     extra: {
       router: {
@@ -50,6 +50,7 @@ module.exports = {
       }
     },
     plugins: [
+      "expo-web-browser",
       "expo-router",
       [
         "expo-splash-screen",

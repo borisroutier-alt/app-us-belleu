@@ -80,6 +80,12 @@ const handlePublishActu = async () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => router.replace('/')} // Redirection vers l'accueil
+>
+      <Text style={styles.backText}>⬅ Retour</Text>
+</TouchableOpacity>
       <ScrollView contentContainerStyle={styles.content}>
         
         {/* SECTION ACTUALITÉ */}
@@ -136,7 +142,7 @@ const handlePublishActu = async () => {
         <View style={styles.row}>
           <TouchableOpacity style={[styles.cardAdmin, {flex: 1, marginRight: 5}]} onPress={() => router.push('/admin/calendrier-gestion')}>
             <Text style={styles.sectionTitle}>📆 Calendrier</Text>
-            <Text style={styles.btnText}>Gérer les matchs</Text>
+            <Text style={styles.btnText}>Gérer les évènementss</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.cardAdmin, {flex: 1, marginLeft: 5}]} onPress={() => router.push('/admin/add-sponsor')}>
@@ -153,6 +159,10 @@ const handlePublishActu = async () => {
           </TouchableOpacity>
           <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/admin/licencies')}>
             <Text style={styles.btnText}>Gérer les nouveaux licenciés</Text>
+          </TouchableOpacity>
+        {/* AJOUT : Accès à la gestion des joueurs */}
+          <TouchableOpacity style={[styles.navBtn, { backgroundColor: '#10B981' }]} onPress={() => router.push('/admin/ajout_joueur')}>
+            <Text style={styles.btnText}>➕ Ajouter un joueur (Effectif)</Text>
           </TouchableOpacity>
         </View>
 
@@ -173,5 +183,7 @@ const styles = StyleSheet.create({
   submitButton: { backgroundColor: '#C5A059', padding: 15, alignItems: 'center', borderRadius: 5 },
   navBtn: { backgroundColor: '#374151', padding: 12, borderRadius: 5, marginBottom: 10 },
   btnText: { color: '#FFF', fontWeight: 'bold' },
-  sectionTitle: { color: '#C5A059', fontSize: 16, fontWeight: 'bold', marginBottom: 10 }
+  sectionTitle: { color: '#C5A059', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
+  backButton: { alignSelf: 'flex-start', padding: 10, marginBottom: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8 },
+  backText: { color: '#C5A059', fontWeight: 'bold' }
 });
