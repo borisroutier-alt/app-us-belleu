@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { FlatList, View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, RefreshControl, Platform } from 'react-native';
+import { FlatList, View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../supabaseClient';
 
 // Définition de la structure d'un joueur
@@ -18,6 +19,7 @@ const CATEGORIES = ['Seniors', 'U18', 'U17', 'U15', 'U13', 'U11', 'U9', 'Dirigea
 export default function ListeJoueurs() {
   const { categorie } = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets(); // Gestion dynamique de l'encoche mobile
   const [joueurs, setJoueurs] = useState<Joueur[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,8 +61,8 @@ export default function ListeJoueurs() {
   };
 
   return (
-    // Utilisation d'une View simple pour éviter les problèmes de SafeArea sur le Web
-    <View style={[styles.container, { paddingTop: Platform.OS === 'web' ? 20 : 0 }]}>
+    // Application dynamique du padding en haut pour éviter l'encoche mobile
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       
       {/* Header personnalisé */}
       <View style={styles.header}>
@@ -70,7 +72,7 @@ export default function ListeJoueurs() {
         <Text style={styles.title}>Effectif</Text>
       </View>
 
-      {/* Conteneur pour la barre de navigation pour éviter la coupure Web */}
+      {/* Conteneur pour la barre de navigation */}
       <View style={styles.tabWrapper}>
         <ScrollView 
           horizontal 
