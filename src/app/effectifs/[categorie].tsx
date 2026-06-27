@@ -14,7 +14,7 @@ interface Joueur {
   photo_url: string;
 }
 
-const CATEGORIES = ['Seniors', 'U18', 'U17', 'U15', 'U13', 'U11', 'U9', 'Dirigeants'];
+const CATEGORIES = ['Seniors', 'U17', 'U15', 'U13', 'U11', 'U9', 'Dirigeants'];
 
 export default function ListeJoueurs() {
   const { categorie } = useLocalSearchParams();

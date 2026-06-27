@@ -44,37 +44,33 @@ export default function AdminDashboard() {
     }
   };
 
-const handlePublishActu = async () => {
-  if (!actuTitle || !actuDescription || !selectedImageUri) 
-    return Alert.alert("Erreur", "Tous les champs sont requis");
-  
-  setLoadingActu(true);
-  try {
-    let finalImageUrl = isExistingImage ? selectedImageUri : (await uploadImageToStorage(selectedImageUri!) || "");
+  const handlePublishActu = async () => {
+    if (!actuTitle || !actuDescription || !selectedImageUri) 
+      return Alert.alert("Erreur", "Tous les champs sont requis");
     
-    // Modification ici : on capture la réponse
-    const { data, error } = await supabase.from('news').insert([{ 
-      title: actuTitle, 
-      description: actuDescription, 
-      image_url: finalImageUrl,
-      category: actuCategorie,
-      date: new Date().toISOString(),
-      color: '#C5A059'
-    }]);
+    setLoadingActu(true);
+    try {
+      let finalImageUrl = isExistingImage ? selectedImageUri : (await uploadImageToStorage(selectedImageUri!) || "");
+      
+      const { error } = await supabase.from('news').insert([{ 
+        title: actuTitle, 
+        description: actuDescription, 
+        image_url: finalImageUrl,
+        category: actuCategorie,
+        date: new Date().toISOString(),
+        color: '#C5A059'
+      }]);
 
-    if (error) {
-      console.error("Erreur Supabase :", error); // Regardez votre console expo/terminal
-      throw new Error(error.message);
+      if (error) throw new Error(error.message);
+
+      Alert.alert("Succès", "Actualité publiée");
+      setActuTitle(''); setActuCategorie(''); setActuDescription(''); setSelectedImageUri(null);
+    } catch (e: any) { 
+      Alert.alert("Erreur", e.message); 
+    } finally { 
+      setLoadingActu(false); 
     }
-
-    Alert.alert("Succès", "Actualité publiée");
-    setActuTitle(''); setActuCategorie(''); setActuDescription(''); setSelectedImageUri(null);
-  } catch (e: any) { 
-    Alert.alert("Erreur", e.message); 
-  } finally { 
-    setLoadingActu(false); 
-  }
-};
+  };
 
   if (!isMounted) return <ActivityIndicator size="large" />;
 
@@ -82,31 +78,18 @@ const handlePublishActu = async () => {
     <SafeAreaView style={styles.container}>
       <TouchableOpacity 
         style={styles.backButton} 
-        onPress={() => router.replace('/')} // Redirection vers l'accueil
->
-      <Text style={styles.backText}>⬅ Retour</Text>
-</TouchableOpacity>
+        onPress={() => router.replace('/')}
+      >
+        <Text style={styles.backText}>⬅ Retour</Text>
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={styles.content}>
         
         {/* SECTION ACTUALITÉ */}
         <View style={styles.cardAdmin}>
           <Text style={styles.sectionTitle}>📢 Publier une Actualité</Text>
-          
-          <TextInput 
-            style={styles.input} 
-            placeholder="Titre de l'article" 
-            placeholderTextColor="#888"
-            value={actuTitle} 
-            onChangeText={setActuTitle} 
-          />
-
-          <TextInput 
-            style={styles.input} 
-            placeholder="Catégorie (ex: Match, Club...)" 
-            placeholderTextColor="#888"
-            value={actuCategorie} 
-            onChangeText={setActuCategorie} 
-          />
+          <TextInput style={styles.input} placeholder="Titre de l'article" placeholderTextColor="#888" value={actuTitle} onChangeText={setActuTitle} />
+          <TextInput style={styles.input} placeholder="Catégorie (ex: Match, Club...)" placeholderTextColor="#888" value={actuCategorie} onChangeText={setActuCategorie} />
           
           <FlatList 
             data={serverImages} 
@@ -123,15 +106,7 @@ const handlePublishActu = async () => {
             <Text style={styles.btnText}>Ou importer une nouvelle image</Text>
           </TouchableOpacity>
           
-          <TextInput 
-            style={[styles.input, {height: 80}]} 
-            placeholder="Contenu détaillé de l'actualité..." 
-            placeholderTextColor="#888"
-            value={actuDescription} 
-            onChangeText={setActuDescription} 
-            multiline 
-            textAlignVertical="top"
-          />
+          <TextInput style={[styles.input, {height: 80}]} placeholder="Contenu détaillé..." placeholderTextColor="#888" value={actuDescription} onChangeText={setActuDescription} multiline textAlignVertical="top" />
           
           <TouchableOpacity style={styles.submitButton} onPress={handlePublishActu} disabled={loadingActu}>
             {loadingActu ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>PUBLIER L'ARTICLE</Text>}
@@ -142,7 +117,7 @@ const handlePublishActu = async () => {
         <View style={styles.row}>
           <TouchableOpacity style={[styles.cardAdmin, {flex: 1, marginRight: 5}]} onPress={() => router.push('/admin/calendrier-gestion')}>
             <Text style={styles.sectionTitle}>📆 Calendrier</Text>
-            <Text style={styles.btnText}>Gérer les évènementss</Text>
+            <Text style={styles.btnText}>Gérer les évènements</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.cardAdmin, {flex: 1, marginLeft: 5}]} onPress={() => router.push('/admin/add-sponsor')}>
@@ -154,13 +129,21 @@ const handlePublishActu = async () => {
         {/* SECTION ADMINISTRATION */}
         <View style={styles.cardAdmin}>
           <Text style={styles.sectionTitle}>🛡️ Administration</Text>
+          
+          {/* ACCÈS LIVE SCORE */}
+          <TouchableOpacity 
+            style={[styles.navBtn, { backgroundColor: '#EF4444' }]} 
+            onPress={() => router.push('/admin/manage-live')}
+          >
+            <Text style={styles.btnText}>🔴 Gérer les Matchs en Direct</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/admin/users')}>
             <Text style={styles.btnText}>Gérer les droits Administrateurs</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/admin/licencies')}>
             <Text style={styles.btnText}>Gérer les nouveaux licenciés</Text>
           </TouchableOpacity>
-        {/* AJOUT : Accès à la gestion des joueurs */}
           <TouchableOpacity style={[styles.navBtn, { backgroundColor: '#10B981' }]} onPress={() => router.push('/admin/ajout_joueur')}>
             <Text style={styles.btnText}>➕ Ajouter un joueur (Effectif)</Text>
           </TouchableOpacity>

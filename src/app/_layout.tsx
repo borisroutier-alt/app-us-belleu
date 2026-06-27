@@ -1,6 +1,6 @@
 // 🚀 DOIT ÊTRE LA PREMIÈRE LIGNE
 import 'react-native-get-random-values';
-// ... reste de vos imports
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack, useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
@@ -38,26 +38,29 @@ export default function RootLayout() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       // Logique session
     });
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        // En mode hash, le '/' pointe vers le hash root, c'est parfait
         router.replace('/'); 
       }
     });
+    
     return () => subscription.unsubscribe();
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <Stack screenOptions={{ 
-          headerShown: false,
-          // Ajout important pour le web : éviter les problèmes de liens lors du rafraîchissement
-          animation: Platform.OS === 'web' ? 'none' : 'default' 
-      }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="news/[id]" />
-        <Stack.Screen name="admin" />
-      </Stack>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Stack screenOptions={{ 
+            headerShown: false,
+            // Ajout important pour le web : éviter les problèmes de liens lors du rafraîchissement
+            animation: Platform.OS === 'web' ? 'none' : 'default' 
+        }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="news/[id]" />
+          <Stack.Screen name="admin" />
+        </Stack>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
